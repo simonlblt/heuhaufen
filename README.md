@@ -10,7 +10,8 @@ Das Ratespiel, bei dem seltene Antworten die meisten Punkte bringen – mit Tage
 |---|---|
 | `index.html` | Das komplette Spiel |
 | `config.js` | Verbindung zur Bestenliste (Supabase-Adresse und öffentlicher Schlüssel) |
-| `supabase.sql` | Einrichtungs-Skript für die Datenbank |
+| `supabase.sql` | Einrichtungs-Skript für die Datenbank (Tagesrätsel) |
+| `duell.sql` | Einrichtungs-Skript für das Duell |
 
 ## Einrichten (einmalig, kostenlos)
 
@@ -31,6 +32,10 @@ Das Ratespiel, bei dem seltene Antworten die meisten Punkte bringen – mit Tage
 2. Die drei Dateien hochladen (`index.html`, `config.js`, `supabase.sql`, gerne auch diese `README.md`).
 3. **Settings → Pages → Build and deployment**: Source „Deploy from a branch“, Branch `main`, Ordner `/ (root)` → **Save**.
 4. Nach etwa einer Minute ist das Spiel unter `https://DEIN-NAME.github.io/heuhaufen/` erreichbar.
+
+### 3. Duell (1 gegen 1, einmalig)
+
+Im Supabase-Projekt links **SQL Editor** öffnen, den kompletten Inhalt von `duell.sql` einfügen und **Run** klicken. Danach funktioniert auf der Startseite der Knopf **Duell starten**: Du spielst 5 Fragen, schickst den Link weiter, dein Gegner spielt dieselben Fragen – am Ende seht ihr Frage für Frage, wer seltener geantwortet hat.
 
 ## Gut zu wissen
 

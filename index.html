@@ -302,6 +302,44 @@ footer{font-size:12px; color:var(--muted); text-align:center; max-width:60ch; ma
 .bgrid,.bmain,.bside{display:contents}
 .o-mine{order:1} .o-form{order:2} .o-play{order:3} .o-list{order:4} .o-pub{order:5} .o-qs{order:6} .o-btns{order:7}
 
+/* Duell */
+.duelstart{display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px 16px; align-items:center; padding:16px; border:2px solid var(--ink); border-radius:14px; background:var(--t3); color:var(--tt3); box-shadow:4px 4px 0 var(--ink)}
+.duelstart .label{color:inherit; opacity:.85}
+.duelstart h3{font-family:var(--font-display); font-size:24px; line-height:1.1; margin:2px 0 4px; letter-spacing:-.01em}
+.duelstart p{font-size:15px}
+.dsicon{width:60px; height:60px; border-radius:50%; background:var(--surface); color:var(--ink); border:2px solid var(--ink); display:grid; place-items:center}
+.dsicon svg{width:34px; height:34px}
+.duelstart .acts{grid-column:1 / -1; display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+.drecent{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+.drecent .hint{color:inherit; opacity:.85}
+.chipbtn{font-family:var(--font-mono); font-weight:700; font-size:13px; letter-spacing:.08em; padding:4px 10px; border-radius:999px; border:1.5px solid currentColor; background:transparent; color:inherit}
+.chipbtn:hover{background:color-mix(in srgb, currentColor 16%, transparent)}
+.tagname{font-family:var(--font-mono); font-weight:700; letter-spacing:.08em}
+.vs{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; align-items:stretch}
+.vside{display:flex; flex-direction:column; align-items:center; gap:2px; padding:14px 10px; border:2px solid var(--ink); border-radius:14px; background:var(--bg); text-align:center; min-width:0}
+.vside .tagname{font-size:26px}
+.vside .vscore{font-family:var(--font-mono); font-size:34px; line-height:1.1}
+.vside small,.vmid small{font-size:12px; color:var(--muted)}
+.vside.won{background:var(--thread); color:var(--thread-ink); box-shadow:4px 4px 0 var(--ink)}
+.vside.won small{color:inherit; opacity:.85}
+.vside.won .you{background:var(--thread-ink); color:var(--thread)}
+.vside .you{background:var(--ink); color:var(--surface)}
+.vmid{display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 4px}
+.vmid b{font-family:var(--font-mono); font-size:30px; line-height:1.1}
+.drows{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+.drow{display:grid; grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr); gap:6px 8px; align-items:center; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--bg)}
+.drow .dq{grid-column:1 / -1; font-weight:600; font-size:15px}
+.drow .dq span{color:var(--muted); font-family:var(--font-mono)}
+.drows.mineonly .drow{grid-template-columns:minmax(0,1fr)}
+.dans{display:flex; align-items:center; gap:8px; min-width:0; padding:6px 8px; border-radius:10px; overflow-wrap:break-word; hyphens:auto; font-size:15px; border:2px solid transparent}
+.dans.win{background:var(--surface); border-color:var(--ink); font-weight:700}
+.dans.same > span:last-child{text-decoration:line-through; opacity:.7}
+.dmid{text-align:center; font-weight:800; font-size:18px; color:var(--muted)}
+.dnote{grid-column:1 / -1; font-size:13px; color:var(--muted)}
+.sharebox{display:flex; flex-direction:column; gap:8px; padding:16px; border:2px dashed var(--ink); border-radius:14px; background:var(--bg)}
+.linkrow{display:flex; gap:10px; flex-wrap:wrap}
+.linkrow input{flex:1 1 220px; min-width:0; font-family:var(--font-mono); font-size:15px; padding:10px 12px; border:2px solid var(--ink); border-radius:10px; background:var(--surface); color:var(--ink)}
+
 /* Desktop: die Breite nutzen */
 @media (min-width: 960px){
   body{padding-block:28px 56px}
@@ -316,8 +354,10 @@ footer{font-size:12px; color:var(--muted); text-align:center; max-width:60ch; ma
   .card.start .daily{grid-column:1; grid-row:2; align-content:start}
   .card.start .settings{grid-column:2; grid-row:2; border:2px solid var(--ink); border-radius:14px; padding:18px 20px; background:var(--bg); box-shadow:4px 4px 0 var(--ink)}
   .card.start .settings > .row:last-child{margin-top:auto}
-  .card.start .example{grid-column:1; grid-row:3}
-  .card.start .rules{grid-column:2; grid-row:3; align-content:start; padding:14px 4px 0}
+  .card.start .duelstart{grid-column:1 / -1; grid-row:3; grid-template-columns:auto minmax(0,1fr) auto}
+  .card.start .duelstart .acts{grid-column:auto; justify-content:flex-end}
+  .card.start .example{grid-column:1; grid-row:4}
+  .card.start .rules{grid-column:2; grid-row:4; align-content:start; padding:14px 4px 0}
   /* Frage: links Frage und Eingabe, rechts der Schacht */
   .playgrid{display:grid; grid-template-columns:minmax(0,1fr) 340px; grid-template-areas:"pq side" "your side" "body side" "after side"; grid-template-rows:auto auto auto 1fr; column-gap:40px; row-gap:0; align-items:start}
   .pq{grid-area:pq; display:flex; flex-direction:column; gap:16px}
@@ -2528,6 +2568,290 @@ function updateBoard(){
   if (state.err) list.insertAdjacentHTML("beforeend", `<p class="hint">Die Liste ist eventuell nicht ganz aktuell.</p>`);
 }
 
+/* ======================= Duell per Link ======================= */
+const DUKEY="heuhaufen:duels";
+let duelLocal={}; try{ const d=JSON.parse(localStorage.getItem(DUKEY)||"{}"); if (d && typeof d==="object" && !Array.isArray(d)) duelLocal=d; }catch(e){}
+function saveDuelLocal(){
+  Object.keys(duelLocal).sort((a,b)=>(duelLocal[b].at||0)-(duelLocal[a].at||0)).slice(30).forEach(k=>delete duelLocal[k]);
+  try{ localStorage.setItem(DUKEY, JSON.stringify(duelLocal)); }catch(e){}
+}
+const cleanCode=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
+const qidOf=i=>hashStr(BANK[i].q).toString(36);
+let QIDX=null;
+function qIndex(id){ if (!QIDX){ QIDX=new Map(); BANK.forEach((_,i)=>QIDX.set(qidOf(i), i)); } return QIDX.get(id); }
+function duelParam(){ try{ return cleanCode(new URLSearchParams(location.search).get("duell")); }catch(e){ return ""; } }
+function clearDuelParam(){ try{ if (new URLSearchParams(location.search).has("duell")) history.replaceState(null, "", location.pathname+location.hash); }catch(e){} }
+function duelLink(code){ let base=""; try{ base=location.origin+location.pathname; }catch(e){} return base+"?duell="+code; }
+function pickDuelQs(){
+  const daily=new Set(dailyPick(dayKey()));
+  const cand=shuffle(BANK.map((_,i)=>i).filter(i=>!daily.has(i)));
+  const pick=[], cats=new Set();
+  for (const i of cand){ if (pick.length>=ROUND_LEN) break; if (!cats.has(BANK[i].k)){ pick.push(i); cats.add(BANK[i].k); } }
+  for (const i of cand){ if (pick.length>=ROUND_LEN) break; if (!pick.includes(i)) pick.push(i); }
+  return pick;
+}
+const I_VS = svg(`<path d="M4.5 19.5L17 7" stroke-width="2.2"/><path d="M19.5 19.5L7 7" stroke-width="2.2"/><ellipse cx="18.3" cy="5.7" rx="2" ry="1.1" transform="rotate(-45 18.3 5.7)" stroke-width="1.5"/><ellipse cx="5.7" cy="5.7" rx="2" ry="1.1" transform="rotate(45 5.7 5.7)" stroke-width="1.5"/>`);
+const DUEL_ERR={not_found:"Dieses Duell gibt es nicht. Prüf den Link.", taken:"Dieses Duell hat schon jemand anderes angenommen.",
+  too_many:"Du hast heute schon sehr viele Duelle gestartet. Morgen geht’s weiter.", network:"Keine Verbindung. Prüf dein Internet und versuch es nochmal.",
+  gone:"Dieses Duell nutzt Fragen, die es nicht mehr gibt."};
+const duelErr=e=>DUEL_ERR[e && e.code] || "Das hat nicht geklappt. Versuch es nochmal.";
+
+let dchain=Promise.resolve();
+function saveDuel(du, results, done){
+  const tiers=results.map(r=>r.tier);
+  const answers=results.map(r=>r.tier>=0 && r.name ? String(r.name).slice(0,60) : "");
+  const p=dchain.then(()=>rpc("save_duel", {p_code:du.code, p_secret:du.secret, p_tiers:tiers, p_answers:answers, p_done:!!done}))
+    .then(()=>{ if (done && duelLocal[du.code]){ duelLocal[du.code].status="done"; saveDuelLocal(); } return true; },
+          e=>{ console.warn("Duell speichern fehlgeschlagen", e); return e||{code:"unknown"}; });
+  dchain=p.then(()=>{});
+  return p;
+}
+function saveDuelDone(){
+  const s=state;
+  saveDuel(s.duel, s.results, true).then(res=>{ if (state!==s) return; const w=$("saveWarn"); if (w) w.hidden = res===true; });
+}
+
+/* Eingabe für das Kürzel */
+function duelTagFormHTML(label){
+  return `<form class="tagform" id="duTag" autocomplete="off" novalidate>
+    <div class="tagtext"><b>Dein Kürzel</b><span class="hint">3 Zeichen – so sieht dein Gegner, wer du bist.</span></div>
+    <input id="duTagIn" maxlength="12" value="${esc(cleanTag(lastTag))}" aria-label="Spielerkürzel aus 3 Zeichen" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go">
+    <button class="btn" id="duGo" type="submit">${label}</button>
+    <p class="fb bad" id="duErr" role="alert"></p>
+  </form>`;
+}
+function wireDuelTag(onTag){
+  const f=$("duTag"), inp=$("duTagIn"), btn=$("duGo"), err=$("duErr");
+  const sync=()=>{ const c=cleanTag(inp.value); if (inp.value!==c) inp.value=c; btn.disabled=c.length!==3; };
+  inp.oninput=sync; sync();
+  f.onsubmit=async ev=>{
+    ev.preventDefault();
+    const tag=cleanTag(inp.value);
+    if (tag.length!==3){ err.textContent="Das Kürzel braucht genau 3 Zeichen."; return; }
+    btn.disabled=true; inp.disabled=true; err.textContent="";
+    lastTag=tag; try{ localStorage.setItem("heuhaufen:tag", tag); }catch(e){}
+    const msg=await onTag(tag);
+    if (msg && $("duErr")){ $("duErr").textContent=msg; inp.disabled=false; sync(); }
+  };
+}
+
+/* Startseite: Karte für das Duell */
+function duelStartHTML(){
+  const recent=Object.entries(duelLocal).sort((a,b)=>(b[1].at||0)-(a[1].at||0)).slice(0,4);
+  return `<div class="duelstart" id="duelCard">
+    <div class="dsicon" aria-hidden="true">${I_VS}</div>
+    <div><span class="label">1 gegen 1</span><h3>Duell</h3><p>Fordere jemanden heraus: Ihr spielt dieselben 5 Fragen, die seltenere Antwort gewinnt. Ein Link genügt.</p></div>
+    <div class="acts"><button class="btn light" id="duelGo" type="button">Duell starten</button>
+      ${recent.length?`<span class="drecent"><span class="hint">Deine Duelle:</span>${recent.map(([c])=>`<button class="chipbtn" type="button" data-code="${esc(c)}">${esc(c)}</button>`).join("")}</span>`:""}</div>
+  </div>`;
+}
+function wireDuelStart(){
+  if ($("duelGo")) $("duelGo").onclick=()=>{ state={screen:"duelnew"}; render(); };
+  document.querySelectorAll("#duelCard [data-code]").forEach(b=>{ b.onclick=()=>openDuel(b.dataset.code); });
+}
+
+/* Neues Duell anlegen */
+function renderDuelNew(){
+  if (!dailyAvailable()){
+    view.innerHTML=`<section class="card stack narrow"><span class="label">Duell</span><h2>Das Duell ist noch nicht eingerichtet.</h2><p class="hint">Dafür braucht die Seite die Verbindung zur Datenbank.</p><div class="row"><button class="btn ghost" id="menu3" type="button">Zum Start</button></div></section>`;
+    $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
+    return;
+  }
+  view.innerHTML=`<section class="card stack narrow">
+    <span class="label">Duell · 1 gegen 1</span>
+    <h2>${state.rematch?"Revanche!":"Fordere jemanden heraus."}</h2>
+    <ul class="rules">
+      <li>${I_VS}<span><b>Ihr spielt dieselben 5 Fragen</b> – du zuerst, dann schickst du den Link weiter.</span></li>
+      <li>${I_TROPHY}<span><b>Pro Frage gewinnt die seltenere Antwort.</b> Wer mehr Fragen holt, gewinnt das Duell. Bei Gleichstand zählen die Punkte.</span></li>
+      <li>${I_FLAG}<span><b>Gleiche Antwort zählt für keinen.</b> Das Naheliegende ist also doppelt riskant.</span></li>
+    </ul>
+    ${duelTagFormHTML("Fragen auslosen & los")}
+    <div class="row"><button class="btn ghost small" id="menu3" type="button">Zurück</button></div>
+  </section>`;
+  $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
+  wireDuelTag(createDuel);
+}
+async function createDuel(tag){
+  const qi=pickDuelQs();
+  let r;
+  try{ r=await rpc("create_duel", {p_player:local.playerId, p_name:tag, p_qids:qi.map(qidOf)}); }
+  catch(e){ return duelErr(e); }
+  const row=Array.isArray(r) ? r[0] : r;
+  if (!row || !row.code || !row.secret) return duelErr(null);
+  duelLocal[row.code]={role:"a", secret:row.secret, at:Date.now(), status:"playing"}; saveDuelLocal();
+  beginWith(qi.map(getQ), "", null, {code:row.code, role:"a", secret:row.secret, me:tag});
+  return "";
+}
+
+/* Duell öffnen – über den Link oder die Startseite */
+let duelPoll=null;
+function stopDuelPoll(){ clearInterval(duelPoll); duelPoll=null; }
+const fetchDuel=code=>rpc("get_duel", {p_code:code, p_player:local.playerId});
+async function openDuel(raw){
+  const code=cleanCode(raw);
+  if (!dailyAvailable()){ state={screen:"duelnew"}; render(); return; }
+  state={screen:"duelload", code}; render();
+  await dchain;
+  let d=null, err=null;
+  try{ d=await fetchDuel(code); }catch(e){ err=e; }
+  if (state.screen!=="duelload" || state.code!==code) return;
+  if (err || !d){ state={screen:"duelerr", msg:duelErr(err||{code:"not_found"})}; render(); return; }
+  // Abgebrochener eigener Versuch: zählt mit dem bisherigen Stand.
+  const mine=duelLocal[code], side=d.role && d[d.role];
+  if (mine && mine.secret && mine.status!=="done" && side && side.status==="playing"){
+    const tiers=(side.tiers||[]).slice(0,ROUND_LEN), answers=(side.answers||[]).slice(0,ROUND_LEN);
+    while (tiers.length<ROUND_LEN){ tiers.push(-1); answers.push(""); }
+    try{ await rpc("save_duel", {p_code:code, p_secret:mine.secret, p_tiers:tiers, p_answers:answers, p_done:true}); mine.status="done"; saveDuelLocal(); d=await fetchDuel(code); }catch(e){}
+    if (state.screen!=="duelload" || state.code!==code) return;
+  }
+  if (!d.role && !d.b){ state={screen:"duelinvite", code, data:d}; render(); return; }
+  if (d.role && !duelLocal[code]){ duelLocal[code]={role:d.role, secret:null, at:Date.now(), status:"done"}; saveDuelLocal(); }
+  showDuel(d);
+}
+function showDuel(d){
+  stopDuelPoll();
+  state={screen:"duel", code:d.code, data:d}; render();
+  if (d.final) return;
+  duelPoll=setInterval(async()=>{
+    if (state.screen!=="duel" || state.code!==d.code){ stopDuelPoll(); return; }
+    try{
+      const n=await fetchDuel(d.code);
+      if (n && state.screen==="duel" && state.code===d.code && JSON.stringify(n)!==JSON.stringify(state.data)) showDuel(n);
+    }catch(e){}
+  }, 12000);
+}
+function renderDuelLoad(){ view.innerHTML=`<section class="card stack narrow"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Duell wird geladen …</span></div></section>`; }
+function renderDuelErr(){
+  view.innerHTML=`<section class="card stack narrow"><span class="label">Duell</span><h2>${esc(state.msg)}</h2>
+    <div class="row"><button class="btn" id="duNew" type="button">Eigenes Duell starten</button><button class="btn ghost small" id="menu3" type="button">Zum Start</button></div></section>`;
+  $("duNew").onclick=()=>{ state={screen:"duelnew"}; render(); };
+  $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
+}
+
+/* Einladung annehmen */
+function renderDuelInvite(){
+  const d=state.data;
+  view.innerHTML=`<section class="card stack narrow">
+    <span class="label">Duell · Code ${esc(d.code)}</span>
+    <h2><span class="tagname">${esc(d.a.name)}</span> fordert dich heraus!</h2>
+    <ul class="rules">
+      <li>${I_VS}<span><b>Ihr spielt dieselben 5 Fragen</b>, je 30 Sekunden. Du hast genau einen Versuch.</span></li>
+      <li>${I_TROPHY}<span><b>Pro Frage gewinnt die seltenere Antwort.</b> Wer mehr Fragen holt, gewinnt. Bei Gleichstand zählen die Punkte.</span></li>
+      <li>${I_FLAG}<span><b>Gleiche Antwort zählt für keinen.</b> Was ${esc(d.a.name)} geantwortet hat, siehst du erst am Ende.</span></li>
+    </ul>
+    ${duelTagFormHTML("Annehmen & spielen")}
+    <div class="row"><button class="btn ghost small" id="menu3" type="button">Lieber nicht</button></div>
+  </section>`;
+  $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
+  wireDuelTag(tag=>joinDuel(d, tag));
+}
+async function joinDuel(d, tag){
+  const qi=d.qids.map(qIndex);
+  if (qi.some(i=>i===undefined)) return duelErr({code:"gone"});
+  let secret;
+  try{ secret=await rpc("join_duel", {p_code:d.code, p_player:local.playerId, p_name:tag}); }
+  catch(e){
+    if (e.code==="own_duel" || e.code==="already_joined"){ openDuel(d.code); return ""; }
+    return duelErr(e);
+  }
+  if (typeof secret!=="string") return duelErr(null);
+  duelLocal[d.code]={role:"b", secret, at:Date.now(), status:"playing"}; saveDuelLocal();
+  beginWith(qi.map(getQ), "", null, {code:d.code, role:"b", secret, me:tag});
+  return "";
+}
+
+/* Auswertung */
+function duelOutcome(d){
+  const A=d.a, B=d.b||{};
+  const rows=d.qids.map((id,j)=>{
+    const i=qIndex(id);
+    const ta=Number.isInteger(A.tiers?.[j])?A.tiers[j]:-1, tb=Number.isInteger(B.tiers?.[j])?B.tiers[j]:-1;
+    const aa=String(A.answers?.[j]||""), ab=String(B.answers?.[j]||"");
+    const same=ta>=0 && tb>=0 && !!aa && norm(aa)===norm(ab);
+    const pa=(same||ta<0)?0:TIERS[ta].pts, pb=(same||tb<0)?0:TIERS[tb].pts;
+    const win=same?0:(ta>tb?1:tb>ta?2:0);
+    return {q:i===undefined?"(Diese Frage gibt es nicht mehr)":BANK[i].q, ta, tb, aa, ab, same, pa, pb, win};
+  });
+  const wa=rows.filter(r=>r.win===1).length, wb=rows.filter(r=>r.win===2).length;
+  const sa=rows.reduce((s,r)=>s+r.pa,0), sb=rows.reduce((s,r)=>s+r.pb,0);
+  const winner=wa>wb?"a":wb>wa?"b":sa>sb?"a":sb>sa?"b":null;
+  return {rows, wa, wb, sa, sb, winner};
+}
+function duelAnsHTML(t, a, win, same){
+  return `<div class="dans${win?" win":""}${same?" same":""}">${t>=0?miniHTML(t):`<span class="mini miss" aria-label="keine Punkte">–</span>`}<span>${t>=0&&a?esc(a):`<span class="hint">keine Antwort</span>`}</span></div>`;
+}
+function sharePanelHTML(code){
+  return `<div class="sharebox">
+    <span class="label">Schick diesen Link an deinen Gegner</span>
+    <div class="linkrow"><input id="duelLink" readonly value="${esc(duelLink(code))}" aria-label="Duell-Link"><button class="btn small" id="duelShare" type="button">Link teilen</button></div>
+    <p class="hint" id="duelShareMsg">Wer den Link zuerst öffnet und annimmt, spielt gegen dich.</p>
+  </div>`;
+}
+function wireShare(code, me){
+  const btn=$("duelShare"), inp=$("duelLink"), msg=$("duelShareMsg"); if (!btn) return;
+  const url=duelLink(code), text=`${me?me+" fordert dich":"Du wirst"} bei Heuhaufen zum Duell heraus! Wer findet die seltensten Antworten?`;
+  inp.onfocus=()=>inp.select();
+  btn.onclick=async()=>{
+    if (navigator.share){ try{ await navigator.share({title:"Heuhaufen-Duell", text, url}); return; }catch(e){ if (e && e.name==="AbortError") return; } }
+    try{ await navigator.clipboard.writeText(text+" "+url); msg.textContent="Link kopiert – jetzt einfügen und abschicken."; }
+    catch(e){ inp.focus(); inp.select(); msg.textContent="Link markiert – jetzt kopieren."; }
+  };
+}
+function duelEndActionsHTML(dl){
+  return `${dl.role==="a" ? sharePanelHTML(dl.code) : ""}
+    <p class="note" id="saveWarn" hidden>${I_FLAG}<span>Dein Ergebnis konnte noch nicht gespeichert werden. <button class="btn ghost small" id="saveRetry" type="button">Nochmal speichern</button></span></p>
+    <div class="row">
+      <button class="btn${dl.role==="a"?" ghost":""}" id="toDuel" type="button">${dl.role==="a"?"Zum Duell":"Ergebnis vergleichen"}</button>
+      <button class="btn ghost small" id="again" type="button">Freies Spiel</button>
+    </div>`;
+}
+function renderDuel(){
+  const d=state.data, role=d.role, A=d.a, B=d.b;
+  const other=role==="a"?B:role==="b"?A:null;
+  let head, body;
+  if (d.final){
+    const o=duelOutcome(d), wn=o.winner==="a"?A.name:o.winner==="b"?B.name:"";
+    head=!o.winner ? "Unentschieden!" : o.winner===role ? "Du gewinnst!" : `${esc(wn)} gewinnt!`;
+    const side=(x,k,score)=>`<div class="vside${o.winner===k?" won":""}${role===k?" me":""}"><span class="tagname">${esc(x.name)}</span>${role===k?`<span class="you">Du</span>`:""}<b class="vscore">${score}</b><small>Punkte</small></div>`;
+    body=`<div class="vs">${side(A,"a",o.sa)}<div class="vmid"><b>${o.wa}:${o.wb}</b><small>Fragen</small></div>${side(B,"b",o.sb)}</div>
+      <ol class="drows" lang="de">${o.rows.map((r,j)=>`<li class="drow">
+        <div class="dq"><span>${j+1}.</span> ${esc(r.q)}</div>
+        ${duelAnsHTML(r.ta, r.aa, r.win===1, r.same)}
+        <div class="dmid" aria-label="${r.same?"Gleiche Antwort":r.win===1?esc(A.name)+" holt die Frage":r.win===2?esc(B.name)+" holt die Frage":"Unentschieden"}">${r.same?"=":r.win===1?"◀":r.win===2?"▶":"·"}</div>
+        ${duelAnsHTML(r.tb, r.ab, r.win===2, r.same)}
+        ${r.same?`<div class="dnote">Gleiche Antwort – zählt für keinen.</div>`:""}
+      </li>`).join("")}</ol>`;
+  } else {
+    const mine=role ? d[role] : null;
+    head = role==="a" && !B ? "Jetzt fehlt nur noch dein Gegner."
+      : role && other && other.status==="playing" ? `${esc(other.name)} spielt gerade …`
+      : role ? "Gleich steht’s fest …"
+      : `${esc(A.name)}${B?" gegen "+esc(B.name):""}`;
+    const sub = role==="a" && !B ? "Sobald jemand den Link öffnet und annimmt, geht’s los. Das Ergebnis erscheint dann hier."
+      : role && other && other.status==="playing" ? `${esc(other.name)} hat ${other.n} von ${ROUND_LEN} Fragen beantwortet. Die Seite aktualisiert sich von selbst.`
+      : !role ? "Das Ergebnis siehst du, sobald beide fertig sind." : "";
+    body=`${sub?`<p class="lede" style="font-size:17px">${sub}</p>`:""}
+      ${role==="a" && !B ? sharePanelHTML(d.code) : ""}
+      ${mine && Array.isArray(mine.tiers) && mine.tiers.length ? `<div class="stack" style="gap:8px"><span class="label">Deine Antworten · ${Number(mine.score)||0} Punkte</span>
+        <ol class="drows mineonly" lang="de">${d.qids.map((id,j)=>{ const i=qIndex(id), t=Number.isInteger(mine.tiers[j])?mine.tiers[j]:-1;
+          return `<li class="drow"><div class="dq"><span>${j+1}.</span> ${esc(i===undefined?"":BANK[i].q)}</div>${duelAnsHTML(t, mine.answers?.[j]||"", false, false)}</li>`; }).join("")}</ol></div>` : ""}`;
+  }
+  view.innerHTML=`<section class="card stack narrow duelcard">
+    <span class="label">Duell · Code ${esc(d.code)}</span>
+    <h2>${head}</h2>
+    ${body}
+    <div class="row">
+      <button class="btn" id="duRematch" type="button">${role && d.final ? "Revanche" : role ? "Neues Duell" : "Eigenes Duell starten"}</button>
+      <button class="btn ghost" id="freeGo" type="button">Freies Spiel</button>
+      <button class="btn ghost small" id="menu3" type="button">Zum Start</button>
+    </div>
+  </section>`;
+  $("duRematch").onclick=()=>{ state={screen:"duelnew", rematch:!!(role && d.final)}; render(); };
+  $("freeGo").onclick=startRound;
+  $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
+  if (role==="a" && !B) wireShare(d.code, A.name);
+}
+
 /* ======================= Zustand ======================= */
 let state={screen:"start"};
 let timerId=null, deadline=0, revealAt=0, digTok=null;
@@ -2540,6 +2864,7 @@ function render(){
   clearInterval(timerId); timerId=null;
   if (digTok){ digTok.skip=true; digTok=null; }
   if (state.screen!=="board") stopBoard();
+  if (state.screen!=="duel") stopDuelPoll();
   setBest();
   if (state.screen==="start") return renderStart();
   if (state.screen==="loading") return renderLoading();
@@ -2548,11 +2873,17 @@ function render(){
   if (state.screen==="dloading") return renderDLoading();
   if (state.screen==="dintro") return renderDIntro();
   if (state.screen==="board") return renderBoard();
+  if (state.screen==="duelnew") return renderDuelNew();
+  if (state.screen==="duelload") return renderDuelLoad();
+  if (state.screen==="duelerr") return renderDuelErr();
+  if (state.screen==="duelinvite") return renderDuelInvite();
+  if (state.screen==="duel") return renderDuel();
 }
 
 /* ---------- Start ---------- */
 const EXAMPLE=[["Deutschland",0],["Polen",1],["Island",2],["Andorra",3],["Georgien",4]];
 function renderStart(){
+  clearDuelParam();
   if (!sampleOK()) source="bank";
   const ai=sampleOK();
   view.innerHTML=`
@@ -2566,6 +2897,7 @@ function renderStart(){
       <div class="hero-art" id="heroArt">${eggOn?eggHTML():haystackSVG()}</div>
     </div>
     <div class="daily" id="dailyCard">${dailyCardHTML()}</div>
+    ${duelStartHTML()}
     <div class="example" aria-label="Beispiel">
       <span class="label">Beispiel</span>
       <div class="ex-q">Nenne ein Land in Europa.</div>
@@ -2610,6 +2942,7 @@ function renderStart(){
   if ($("srcAI")) $("srcAI").onclick=()=>{ source="ai"; render(); };
   if ($("aiChk")) $("aiChk").onchange=ev=>{ stats.ai=ev.target.checked; saveStats(); };
   wireDailyCard();
+  wireDuelStart();
 }
 
 function renderLoading(){
@@ -2645,8 +2978,8 @@ async function startRound(){
   beginWith(drawBank());
 }
 
-function beginWith(qs, notice, daily){
-  state={screen:"play", qs, i:0, results:[], phase:"ask", fb:notice||"", fbBad:false, tries:[], checking:false, daily:daily||null};
+function beginWith(qs, notice, daily, duel){
+  state={screen:"play", qs, i:0, results:[], phase:"ask", fb:notice||"", fbBad:false, tries:[], checking:false, daily:daily||null, duel:duel||null};
   startQuestion();
 }
 function startQuestion(){
@@ -2694,7 +3027,7 @@ function renderPlay(){
   <section class="card stack">
     <div class="qhead">
       <span class="chip">${catIcon(Q.k)}${esc(Q.k)}${Q.src==="ai"?" · von Claude":""}</span>
-      <div class="row" style="gap:10px"><div class="pips" aria-hidden="true">${pips}</div><span class="prog">${state.daily?"Tagesrätsel · ":""}Frage ${state.i+1}/${state.qs.length} · ${total} Pkt.</span></div>
+      <div class="row" style="gap:10px"><div class="pips" aria-hidden="true">${pips}</div><span class="prog">${state.daily?"Tagesrätsel · ":state.duel?"Duell · ":""}Frage ${state.i+1}/${state.qs.length} · ${total} Pkt.</span></div>
     </div>
     <div class="playgrid">
     <div class="pq">
@@ -2831,6 +3164,7 @@ function finish(hit, how){
   if (r.tier===-1) r.classics=shuffle(Q.entries.filter(e=>e.tier===0 && !e.ai)).slice(0,3).map(e=>e.name);
   state.results[state.i]=r;
   if (state.daily) queueOwn(state.daily.key, {score:state.results.reduce((s,x)=>s+x.pts,0), tiers:state.results.map(x=>x.tier)});
+  if (state.duel) saveDuel(state.duel, state.results, false);
   state.phase="reveal"; state.fb=""; state.fbBad=false;
   state.animDone = r.tier<0 || REDUCED;
   state.celebrate = !REDUCED && r.tier>=3;
@@ -3019,10 +3353,11 @@ function endRound(){
   stats.rounds++; stats.best=Math.max(stats.best,total);
   stats.needles+=state.results.filter(r=>r.tier===4).length;
   saveStats();
-  const dly=state.daily;
-  state={screen:"end", results:state.results, qs:state.qs, total, newBest:!first && total>prevBest, daily:dly};
+  const dly=state.daily, dl=state.duel;
+  state={screen:"end", results:state.results, qs:state.qs, total, newBest:!first && total>prevBest, daily:dly, duel:dl};
   render();
   if (dly) saveDailyDone();
+  if (dl) saveDuelDone();
 }
 function saveDailyDone(){
   const s=state;
@@ -3042,9 +3377,9 @@ function rating(t){
 const EMO=["🟨","🟧","🟩","🟦","🪡"];
 function renderEnd(){
   const [ri,title,sub]=rating(state.total);
-  const dly=state.daily, dEntry=dly && myEntry(dly.key);
+  const dly=state.daily, dl=state.duel, dEntry=dly && myEntry(dly.key);
   const shareText=`Heuhaufen${dly?" · Tagesrätsel "+dayLabel(dly.key):""} ${state.total}/${ROUND_LEN*100}\n${state.results.map(r=>r.tier>=0?EMO[r.tier]:"⬛").join("")}`;
-  const actions = dly ? `
+  const actions = dl ? duelEndActionsHTML(dl) : dly ? `
     ${dEntry && cleanTag(dEntry.name) ? "" : nameFormHTML()}
     <p class="note" id="saveWarn" hidden>${I_FLAG}<span>Dein Ergebnis konnte noch nicht gespeichert werden. <button class="btn ghost small" id="saveRetry" type="button">Nochmal speichern</button></span></p>
     <div class="row">
@@ -3059,7 +3394,7 @@ function renderEnd(){
     </div>`;
   view.innerHTML=`
   <section class="card stack end">
-    <span class="label">${dly?"Tagesrätsel "+dayLabel(dly.key)+" · geschafft":"Runde vorbei"}${state.newBest?" · neuer Bestwert!":""}</span>
+    <span class="label">${dly?"Tagesrätsel "+dayLabel(dly.key)+" · geschafft":dl?"Duell "+dl.code+" · geschafft":"Runde vorbei"}${state.newBest?" · neuer Bestwert!":""}</span>
     <div class="endtop">
       <div class="total">${state.total}<span> / ${ROUND_LEN*100}</span></div>
       <div class="badge">${ticonHTML(ri)}<div><h2>${title}</h2><p class="hint">${sub}</p></div></div>
@@ -3086,7 +3421,12 @@ function renderEnd(){
     $("saveRetry").onclick=()=>{ $("saveWarn").hidden=true; saveDailyDone(); };
     wireTagForm(dly.key, ()=>openBoard(dly.key));
   }
-  $("share").onclick=ev=>{
+  if (dl){
+    $("toDuel").onclick=()=>openDuel(dl.code);
+    $("saveRetry").onclick=()=>{ $("saveWarn").hidden=true; saveDuelDone(); };
+    if (dl.role==="a") wireShare(dl.code, dl.me);
+  }
+  if ($("share")) $("share").onclick=ev=>{
     const btn=ev.currentTarget;
     const fallback=()=>{ $("shareBox").hidden=false; const ta=$("shareTxt"); ta.focus(); ta.select(); btn.textContent="Markiert – jetzt kopieren"; };
     try{ navigator.clipboard.writeText(shareText).then(()=>{ btn.textContent="Kopiert"; }, fallback); }catch(e){ fallback(); }
@@ -3098,6 +3438,8 @@ $("home").onclick=ev=>{ ev.preventDefault(); if (state.screen!=="loading"){ stat
 /* ======================= Start ======================= */
 function start(data){
   const s=data && data.state;
+  const dq=duelParam();
+  if (dq){ openDuel(dq); return; }
   if (s && s.screen==="board" && typeof s.key==="string"){
     if (dbReady){ openBoard(s.key); return; }
     pendingBoard=s.key; render(); return;
