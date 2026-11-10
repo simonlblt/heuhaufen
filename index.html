@@ -292,6 +292,57 @@ details.qs{border-top:1px solid var(--line); padding-top:10px}
 details.qs summary{cursor:pointer; font-weight:600}
 details.qs ol{margin:8px 0 0; padding-left:22px; display:grid; gap:4px}
 footer{font-size:12px; color:var(--muted); text-align:center; max-width:60ch; margin:0 auto}
+/* Spielfläche: Frage links, Heuhaufen-Schacht rechts (auf schmalen Bildschirmen untereinander) */
+.playgrid{display:flex; flex-direction:column; gap:16px; min-width:0}
+.pside.preview{display:none}
+.pyour{border-top:2px dashed var(--ink); padding-top:18px}
+.dig.idle{cursor:default}
+.dig.idle .band{color:var(--ink)}
+/* Bestenliste: auf schmalen Bildschirmen eine Spalte in fester Reihenfolge */
+.bgrid,.bmain,.bside{display:contents}
+.o-mine{order:1} .o-form{order:2} .o-play{order:3} .o-list{order:4} .o-pub{order:5} .o-qs{order:6} .o-btns{order:7}
+
+/* Desktop: die Breite nutzen */
+@media (min-width: 960px){
+  body{padding-block:28px 56px}
+  .app{max-width:1180px; gap:24px}
+  .card{padding:32px}
+  .card.narrow{max-width:820px; width:100%; margin-inline:auto}
+  /* Start: Titel oben, darunter Tagesrätsel und freies Spiel nebeneinander */
+  .card.start{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px 32px; align-items:stretch}
+  .card.start .hero-grid{grid-column:1 / -1; grid-template-columns:minmax(0,1fr) 300px; gap:40px}
+  .card.start h1{font-size:68px}
+  .card.start .lede{font-size:20px}
+  .card.start .daily{grid-column:1; grid-row:2; align-content:start}
+  .card.start .settings{grid-column:2; grid-row:2; border:2px solid var(--ink); border-radius:14px; padding:18px 20px; background:var(--bg); box-shadow:4px 4px 0 var(--ink)}
+  .card.start .settings > .row:last-child{margin-top:auto}
+  .card.start .example{grid-column:1; grid-row:3}
+  .card.start .rules{grid-column:2; grid-row:3; align-content:start; padding:14px 4px 0}
+  /* Frage: links Frage und Eingabe, rechts der Schacht */
+  .playgrid{display:grid; grid-template-columns:minmax(0,1fr) 340px; grid-template-areas:"pq side" "your side" "body side" "after side"; grid-template-rows:auto auto auto 1fr; column-gap:40px; row-gap:0; align-items:start}
+  .pq{grid-area:pq; display:flex; flex-direction:column; gap:16px}
+  .pyour{grid-area:your; margin-top:20px}
+  .pbody{grid-area:body; margin-top:20px}
+  .pafter{grid-area:after; margin-top:20px}
+  .playgrid > .pside{grid-area:side; display:block; position:sticky; top:20px}
+  .pside .band{height:68px}
+  .pside .band .bn{font-size:18px}
+  .question{font-size:46px}
+  form.ans input{font-size:22px; padding:14px 18px}
+  /* Rundenende: links Ergebnis und Diagramm, rechts die Antworten */
+  .card.end{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); grid-template-areas:"lab lab" "top sum" "chart sum" "acts sum" "share share"; column-gap:40px; row-gap:18px; align-items:start}
+  .card.end > .label{grid-area:lab}
+  .card.end > .endtop{grid-area:top}
+  .card.end > .chart{grid-area:chart}
+  .card.end > .sum{grid-area:sum}
+  .card.end > .endacts{grid-area:acts}
+  .card.end > #shareBox{grid-area:share}
+  .card.end .cell{height:30px}
+  /* Bestenliste: links die Liste, rechts dein Ergebnis und die Knöpfe */
+  .bgrid{display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:32px; align-items:start}
+  .bmain,.bside{display:flex; flex-direction:column; gap:16px}
+  .bside{position:sticky; top:20px}
+}
 @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
 </style>
 </head>
@@ -2298,11 +2349,11 @@ function openDaily(){
   state={screen:"dintro", key}; render();
 }
 function renderDLoading(){
-  view.innerHTML=`<section class="card stack"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Tagesrätsel wird geladen …</span></div></section>`;
+  view.innerHTML=`<section class="card stack narrow"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Tagesrätsel wird geladen …</span></div></section>`;
 }
 function renderDIntro(){
   const key=state.key;
-  view.innerHTML=`<section class="card stack">
+  view.innerHTML=`<section class="card stack narrow">
     <span class="label">Tagesrätsel · ${dayLabel(key)}</span>
     <h2>Ein Versuch. Fünf Fragen. Alle spielen dieselben.</h2>
     <ul class="rules">
@@ -2420,26 +2471,30 @@ function rowHTML(r){
 function renderBoard(){
   const key=state.key, entry=myEntry(key);
   const showForm=!!entry && !entry.unknown && !!entry.id && !cleanTag(entry.name);
-  view.innerHTML=`<section class="card stack">
+  view.innerHTML=`<section class="card stack boardcard">
     <div class="boardhead">
       <div class="stack" style="gap:4px"><span class="label">Tagesrätsel · Bestenliste</span><h2>${dayLabel(key)}</h2></div>
       <span class="hint">${I_CLOCK}Neues Rätsel in ${untilNext()}</span>
     </div>
-    <div id="boardMine"></div>
-    ${showForm?nameFormHTML("Noch ohne Kürzel – trag dich ein, damit die anderen dich sehen."):""}
-    ${entry && entry.unknown ? noteHTML(I_FLAG, "Auf diesem Gerät wurde das heutige Rätsel schon gespielt.") : ""}
-    ${!entry ? `<div class="row"><button class="btn" id="playDaily" type="button">Tagesrätsel spielen</button></div>` : ""}
-    <div id="boardList"></div>
-    ${entry?`<details class="qs"><summary>Die Fragen von heute</summary><ol>${dailyPick(key).map(i=>`<li>${esc(BANK[i].q)}</li>`).join("")}</ol></details>`:""}
-    <div class="row">
+    <div class="bgrid">
+    <div class="bmain"><div id="boardList" class="o-list"></div></div>
+    <div class="bside">
+    <div id="boardMine" class="o-mine"></div>
+    ${showForm?`<div class="o-form">${nameFormHTML("Noch ohne Kürzel – trag dich ein, damit die anderen dich sehen.")}</div>`:""}
+    ${entry && entry.unknown ? `<div class="o-form">${noteHTML(I_FLAG, "Auf diesem Gerät wurde das heutige Rätsel schon gespielt.")}</div>` : ""}
+    ${!entry ? `<div class="row o-play"><button class="btn" id="playDaily" type="button">Tagesrätsel spielen</button></div>` : ""}
+    ${entry?`<details class="qs o-qs"><summary>Die Fragen von heute</summary><ol>${dailyPick(key).map(i=>`<li>${esc(BANK[i].q)}</li>`).join("")}</ol></details>`:""}
+    <div class="row o-btns">
       <button class="btn ghost" id="freeGo" type="button">Freies Spiel</button>
       <button class="btn ghost small" id="menu2" type="button">Zum Start</button>
+    </div>
+    </div>
     </div>
   </section>`;
   if ($("playDaily")) $("playDaily").onclick=()=>{ state={screen:"dintro", key:dayKey()}; render(); };
   $("freeGo").onclick=startRound;
   $("menu2").onclick=()=>{ state={screen:"start"}; render(); };
-  if (showForm) wireTagForm(key, ()=>{ const f=$("tagForm"); if (f) f.remove(); updateBoard(); });
+  if (showForm) wireTagForm(key, ()=>{ const f=$("tagForm"); if (f) (f.closest(".o-form")||f).remove(); updateBoard(); });
   updateBoard();
 }
 function updateBoard(){
@@ -2487,7 +2542,7 @@ function renderStart(){
   if (!sampleOK()) source="bank";
   const ai=sampleOK();
   view.innerHTML=`
-  <section class="card stack">
+  <section class="card stack start">
     <div class="hero-grid">
       <div class="stack" style="gap:12px">
         <span class="label">Das Ratespiel für Querdenker</span>
@@ -2543,7 +2598,7 @@ function renderStart(){
 }
 
 function renderLoading(){
-  view.innerHTML=`<section class="card stack">
+  view.innerHTML=`<section class="card stack narrow">
     <div class="hero-art" style="width:150px">${haystackSVG()}</div>
     <div class="loading"><div class="spin" aria-hidden="true"></div><span>Claude stopft gerade einen frischen Heuhaufen …</span></div>
     <p class="hint">Fünf neue Fragen mit allen Antwortstufen. Das kann 10 bis 30 Sekunden dauern.</p>
@@ -2607,7 +2662,7 @@ function renderPlay(){
   const known=Q.entries.filter(e=>!e.ai).length;
   let body;
   if (state.phase==="ask"){
-    body=`
+    body=`<div class="pbody stack">
       <form class="ans" id="ansForm" autocomplete="off">
         <input id="ans" name="ans" type="text" placeholder="Deine Antwort …" aria-label="Deine Antwort" autocapitalize="sentences" spellcheck="false" enterkeyhint="send" maxlength="80">
         <button class="btn" type="submit" id="send">Antworten</button>
@@ -2616,7 +2671,8 @@ function renderPlay(){
       <div class="row" style="justify-content:space-between; align-items:flex-start">
         <div class="tries" id="tries">${state.tries.map(t=>`<span class="try">${esc(t)}</span>`).join("")}</div>
         <button class="btn ghost small" id="pass" type="button">Passen</button>
-      </div>`;
+      </div></div>
+      <aside class="pside preview">${shaftPreviewHTML(false)}</aside>`;
   } else body=revealHTML(Q, state.results[state.i]);
   const leftNow = state.phase==="ask" ? Math.max(0,(deadline-Date.now())/1000) : (state.left||0);
   view.innerHTML=`
@@ -2625,13 +2681,17 @@ function renderPlay(){
       <span class="chip">${catIcon(Q.k)}${esc(Q.k)}${Q.src==="ai"?" · von Claude":""}</span>
       <div class="row" style="gap:10px"><div class="pips" aria-hidden="true">${pips}</div><span class="prog">${state.daily?"Tagesrätsel · ":""}Frage ${state.i+1}/${state.qs.length} · ${total} Pkt.</span></div>
     </div>
+    <div class="playgrid">
+    <div class="pq">
     <div class="qrow">
       <div class="cat" aria-hidden="true">${catIcon(Q.k)}</div>
       <div class="qtext">${questionHTML(Q.q)}</div>
       ${ringHTML(leftNow, state.phase==="ask"?"":"frozen")}
     </div>
     <p class="known">${I_BOOK}<span>Wir kennen ${known} richtige Antworten${aiCheckOn()?" – alle anderen prüft Claude":""}.</span></p>
+    </div>
     ${body}
+    </div>
   </section>`;
   if (state.phase==="ask"){
     const inp=$("ans");
@@ -2794,14 +2854,27 @@ const noteHTML=(icon, html)=>`<p class="note">${icon}<span>${html}</span></p>`;
 const chipsHTML=list=>`<div class="chips">${list.map(x=>`<span class="ach">${miniHTML(x.tier)}${esc(x.name)}<small>+${TIERS[x.tier].pts}</small></span>`).join("")}</div>`;
 
 function revealHTML(Q, r){
-  if (r.tier<0) return `<div class="reveal stack">${afterHTML(Q,r)}</div>`;
+  if (r.tier<0) return `<div class="pbody reveal stack">${afterHTML(Q,r)}</div>
+    <aside class="pside preview">${shaftPreviewHTML(true)}</aside>`;
   const done=state.animDone;
-  return `<div class="reveal stack">
-    <p class="your">Deine Antwort: <q>${esc(r.typed||r.name)}</q>${done?"":" – wie tief steckt sie im Heuhaufen?"}</p>
-    ${digHTML(r.tier, done)}
-    <div id="after" class="stack"${done?"":" hidden"}>${afterHTML(Q,r)}</div>
+  return `<p class="your pyour">Deine Antwort: <q>${esc(r.typed||r.name)}</q>${done?"":" – wie tief steckt sie im Heuhaufen?"}</p>
+    <aside class="pside">${digHTML(r.tier, done)}</aside>
+    <div id="after" class="pafter stack"${done?"":" hidden"}>${afterHTML(Q,r)}</div>`;
+}
+function shaftPreviewHTML(miss){
+  return `<div class="dig idle" role="img" aria-label="${miss?"Diesmal kein Treffer":"So tief kann deine Antwort einsinken"}">
+    <div class="digtop">
+      <div class="dd"><span class="label">Tiefe</span><b>0 cm</b></div>
+      <div class="dd right"><span class="label">${miss?"Kein Treffer":"Bereit"}</span><b>+0</b></div>
+    </div>
+    <div class="shaft">
+      ${TIERS.map((x,i)=>`<div class="band" data-i="${i}" style="${tierVars(i)}">${tierIcon(i)}<span class="bn">${x.name}</span><span class="bp">+${x.pts}</span></div>`).join("")}
+      <div class="probe" style="top:0%">${PROBE_SVG}</div>
+    </div>
+    <p class="skip hint">${miss?"Nächstes Mal tiefer graben!":"Je seltener die Antwort, desto tiefer sinkt sie."}</p>
   </div>`;
 }
+
 
 function afterHTML(Q, r){
   const last=state.i===state.qs.length-1;
@@ -2970,7 +3043,7 @@ function renderEnd(){
       <button class="btn ghost small" id="menu" type="button">Zum Start</button>
     </div>`;
   view.innerHTML=`
-  <section class="card stack">
+  <section class="card stack end">
     <span class="label">${dly?"Tagesrätsel "+dayLabel(dly.key)+" · geschafft":"Runde vorbei"}${state.newBest?" · neuer Bestwert!":""}</span>
     <div class="endtop">
       <div class="total">${state.total}<span> / ${ROUND_LEN*100}</span></div>
@@ -2988,7 +3061,7 @@ function renderEnd(){
         <span class="sp">${r.pts}</span>
         <span class="sa">${r.tier>=0?`${esc(r.name)} · ${TIERS[r.tier].name}${r.via==="ai-new"?`<span class="tagai">von Claude geprüft</span>`:""}`:(r.how==="pass"?"gepasst":"Zeit abgelaufen")}</span></li>`).join("")}
     </ul>
-    ${actions}
+    <div class="endacts stack">${actions}</div>
     <div id="shareBox" hidden><textarea class="share" id="shareTxt" rows="2" readonly aria-label="Ergebnis zum Kopieren">${esc(shareText)}</textarea></div>
   </section>`;
   $("again").onclick=startRound;
