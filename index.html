@@ -1977,20 +1977,18 @@ x:"Patient/Besucher:Das ist kein Beruf.|Tierarzt:Den findet man eher in der Tier
 const TIERS = [
   {name:"Heuballen", label:"Kennt jeder",        pts:10,  per100:33, crowd:"Von 100 Leuten sagen das etwa 33."},
   {name:"Strohhalm", label:"Beliebt",            pts:30,  per100:10, crowd:"Von 100 Leuten sagen das etwa 10."},
-  {name:"Ähre",      label:"Selten",             pts:55,  per100:3,  crowd:"Von 100 Leuten sagen das etwa 3."},
-  {name:"Kornblume", label:"Rarität",            pts:80,  per100:1,  crowd:"Von 100 Leuten sagt das höchstens einer."},
+  {name:"Maus",      label:"Selten",             pts:55,  per100:3,  crowd:"Von 100 Leuten sagen das etwa 3."},
+  {name:"Kleeblatt", label:"Rarität",            pts:80,  per100:1,  crowd:"Von 100 Leuten sagt das höchstens einer."},
   {name:"Nadel",     label:"Nadel im Heuhaufen", pts:100, per100:0,  crowd:"Darauf kommt fast niemand – außer dir."}
 ];
 const ROUND_LEN = 5, SECONDS = 30, CIRC = 169.65;
 
 function svg(inner, extra){ return `<svg viewBox="0 0 24 24" class="ti" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${extra||""}>${inner}</svg>`; }
-const CORNFLOWER = (()=>{ let d=""; for(let k=0;k<8;k++){ const a=k*Math.PI/4, P=(r,o)=>`${(12+r*Math.cos(a+o)).toFixed(2)} ${(12+r*Math.sin(a+o)).toFixed(2)}`;
-  d+=`M${P(3.2,-.3)}L${P(10,-.24)}L${P(8.4,0)}L${P(10,.24)}L${P(3.2,.3)}Z`; } return d; })();
 const TICON = [
   `<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M8.5 6v12M15.5 6v12"/><path d="M5.5 10h1M11 9.5h1.5M11 14h1.5M18 12h.5" stroke-width="1.6"/>`,
   `<path d="M6 21 L18 3" stroke-width="2.4"/><path d="M10.4 14.4l2.4 1.6" stroke-width="1.8"/><path d="M12.5 11.5c2-1.3 4.2-1.3 6.5 0c-2.3 1.5-4.5 1.5-6.5 0z" fill="currentColor" stroke="none"/>`,
-  `<path d="M12 22V6M12 6V2"/><path d="M12 8.5c-2.2-.8-3.4-2.6-3.4-4.6 2.2.6 3.4 2.4 3.4 4.6zM12 8.5c2.2-.8 3.4-2.6 3.4-4.6-2.2.6-3.4 2.4-3.4 4.6zM12 13.5c-2.2-.8-3.4-2.6-3.4-4.6 2.2.6 3.4 2.4 3.4 4.6zM12 13.5c2.2-.8 3.4-2.6 3.4-4.6-2.2.6-3.4 2.4-3.4 4.6zM12 18.5c-2.2-.8-3.4-2.6-3.4-4.6 2.2.6 3.4 2.4 3.4 4.6zM12 18.5c2.2-.8 3.4-2.6 3.4-4.6-2.2.6-3.4 2.4-3.4 4.6z" fill="currentColor" stroke-width="1"/>`,
-  `<path d="${CORNFLOWER}" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="2.6" fill="var(--surface)" stroke="currentColor" stroke-width="1.6"/>`,
+  `<path d="M3.5 18c-.4-4.6 2.9-8 7.4-8 4.1 0 7.3 2.5 9.8 5.6-1.7 1.6-3.8 2.4-6.2 2.4z"/><path d="M9.2 10.5a2.6 2.6 0 1 1 4.6-.4"/><circle cx="16.2" cy="13.6" r="1.1" fill="currentColor" stroke="none"/><path d="M3.5 18c-1.9.3-2.4 2.5-.8 3.3" stroke-width="1.6"/>`,
+  `<path d="M13.2 16.4c1.3 2 2.4 3.3 4.2 4.8" stroke-width="2.2"/><g fill="currentColor" stroke="var(--surface)" stroke-width="1"><circle cx="12" cy="7.6" r="3.4"/><circle cx="16.4" cy="12" r="3.4"/><circle cx="12" cy="16.4" r="3.4"/><circle cx="7.6" cy="12" r="3.4"/></g><circle cx="12" cy="12" r="1.3" fill="var(--surface)" stroke="none"/>`,
   `<path d="M4.5 19.5 L17.5 6.5" stroke-width="2.4"/><ellipse cx="18.8" cy="5.2" rx="2.3" ry="1.2" transform="rotate(-45 18.8 5.2)" stroke-width="1.6"/><path d="M18 6.2c3.5 3 -3.5 6.5 1.5 11.5" stroke-width="1.4"/><path d="M5.5 3.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="currentColor" stroke="none"/>`
 ];
 const tierIcon = i => svg(TICON[i]);

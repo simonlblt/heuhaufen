@@ -43,7 +43,7 @@ end;
 $$;
 
 -- Fortschritt speichern. Die Punkte werden hier aus den Stufen berechnet.
--- Stufen: -1 = keine Punkte, 0..4 = Heuballen, Strohhalm, Ähre, Kornblume, Nadel.
+-- Stufen: -1 = keine Punkte, 0..4 = Heuballen, Strohhalm, Maus, Kleeblatt, Nadel.
 create or replace function public.save_daily(p_id uuid, p_secret uuid, p_tiers smallint[], p_done boolean)
 returns integer
 language plpgsql security definer set search_path = public
