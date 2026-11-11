@@ -1,6 +1,6 @@
 # Heuhaufen
 
-Das Ratespiel, bei dem seltene Antworten die meisten Punkte bringen – mit Tagesrätsel und Bestenliste. Spielbar ohne Anmeldung.
+Das Ratespiel, bei dem seltene Antworten die meisten Punkte bringen – mit Tagesrätsel, Duellen, Profilen mit Profilbild, Level und Rangliste. Das freie Spiel geht ohne Anmeldung.
 
 **Hier spielen:** https://simonlblt.github.io/heuhaufen/
 
@@ -9,50 +9,54 @@ Das Ratespiel, bei dem seltene Antworten die meisten Punkte bringen – mit Tage
 | Datei | Wofür |
 |---|---|
 | `index.html` | Das komplette Spiel |
-| `config.js` | Verbindung zur Bestenliste (Supabase-Adresse und öffentlicher Schlüssel) |
-| `supabase.sql` | Einrichtungs-Skript für die Datenbank (Tagesrätsel) |
-| `duell.sql` | Einrichtungs-Skript für das Duell |
-| `profil.sql` | Einrichtungs-Skript für Spielerprofile und Match-Historie |
-| `konto.sql` | Einrichtungs-Skript für Profile mit Name und Passwort |
+| `config.js` | Verbindung zur Datenbank (Supabase-Adresse und öffentlicher Schlüssel) |
+| `setup.sql` | Das **eine** Einrichtungs-Skript für die Datenbank |
 
-## Einrichten (einmalig, kostenlos)
+## Datenbank einrichten oder aktualisieren
 
-### 1. Datenbank für die Bestenliste (Supabase)
+Es gibt nur noch ein Skript: `setup.sql`. Es richtet alles ein, was die Seite braucht, und bringt eine bestehende Datenbank auf den neuesten Stand. Es kann beliebig oft laufen – Profile, Ergebnisse und Duelle bleiben erhalten.
+
+1. `setup.sql` öffnen, alles markieren und kopieren.
+2. Im Supabase-Projekt links **SQL Editor** öffnen, einfügen und **Run** klicken.
+3. Es sollte „Success. No rows returned“ erscheinen.
+
+Nach einem Update der Seite, das neue Funktionen bringt, einfach dieses Skript noch einmal laufen lassen. Solange das nicht passiert ist, läuft das Spiel weiter – nur die neuen Funktionen (z. B. Profilbilder, Level, Rangliste) melden, dass sie noch nicht eingerichtet sind.
+
+## Zum ersten Mal einrichten (kostenlos)
+
+### 1. Datenbank (Supabase)
 
 1. Auf [supabase.com](https://supabase.com) kostenlos registrieren und **New project** anlegen (Name z. B. `heuhaufen`, Region **Frankfurt**). Das Datenbank-Passwort brauchst du für das Spiel nicht.
-2. Links **SQL Editor** öffnen, den kompletten Inhalt von `supabase.sql` einfügen und **Run** klicken.
+2. `setup.sql` wie oben beschrieben im **SQL Editor** ausführen.
 3. Unter **Project Settings → API Keys** (bzw. **API**) diese zwei Werte kopieren:
    - die **Project URL** (sieht aus wie `https://abcdefghijkl.supabase.co`)
    - den **öffentlichen Schlüssel**: „publishable“ (`sb_publishable_…`) oder bei älteren Projekten „anon public“ (beginnt mit `eyJ`)
 4. Beide Werte in `config.js` eintragen.
 
-> Niemals den **secret**- bzw. **service_role**-Schlüssel verwenden oder weitergeben. Der öffentliche Schlüssel darf auf der Website stehen – die Datenbank lässt damit nur die vier Spiel-Aktionen zu.
+> Niemals den **secret**- bzw. **service_role**-Schlüssel verwenden oder weitergeben. Der öffentliche Schlüssel darf auf der Website stehen – die Datenbank lässt damit nur die Spiel-Aktionen zu.
 
 ### 2. Website (GitHub Pages)
 
 1. Auf GitHub ein **öffentliches** Repository anlegen, z. B. `heuhaufen`.
-2. Die drei Dateien hochladen (`index.html`, `config.js`, `supabase.sql`, gerne auch diese `README.md`).
+2. `index.html`, `config.js` und `setup.sql` hochladen (gerne auch diese `README.md`).
 3. **Settings → Pages → Build and deployment**: Source „Deploy from a branch“, Branch `main`, Ordner `/ (root)` → **Save**.
 4. Nach etwa einer Minute ist das Spiel unter `https://DEIN-NAME.github.io/heuhaufen/` erreichbar.
 
-### 3. Duell (1 gegen 1, einmalig)
+## Was es gibt
 
-Im Supabase-Projekt links **SQL Editor** öffnen, den kompletten Inhalt von `duell.sql` einfügen und **Run** klicken. Danach funktioniert auf der Startseite der Knopf **Duell starten**: Du spielst 5 Fragen, schickst den Link weiter, dein Gegner spielt dieselben Fragen – am Ende seht ihr Frage für Frage, wer seltener geantwortet hat.
-
-### 4. Spielerprofile und Match-Historie (einmalig)
-
-Im **SQL Editor** den kompletten Inhalt von `profil.sql` einfügen und **Run** klicken (erst nachdem `supabase.sql` und `duell.sql` gelaufen sind). Danach gibt es oben rechts den Knopf **Profil**: Siegquote, gewonnene Fragen, Ø Punkte, Nadeln, Tagesrätsel-Statistik, häufigste Gegner und die letzten 30 Duelle. Namen in der Bestenliste und im Duell führen zum Profil des Spielers; Profile lassen sich per Link teilen (`?spieler=…`).
-
-### 5. Profile mit Anmeldung (einmalig)
-
-Im **SQL Editor** den kompletten Inhalt von `konto.sql` einfügen und **Run** klicken (nach den anderen drei Skripten). Danach kann man oben rechts unter **Anmelden** ein Profil mit Name und Passwort erstellen und sich auf jedem Gerät damit anmelden. Die 3-Zeichen-Kürzel entfallen – Namen dürfen bis zu 10 Zeichen haben.
+- **Freies Spiel:** 200 Fragen, beliebig viele Runden, auch ohne Profil.
+- **Tagesrätsel:** 5 Fragen, für alle dieselben, ein Versuch pro Profil und Tag, mit Bestenliste.
+- **Duell (1 gegen 1):** Du spielst 5 Fragen und schickst einen Link weiter. Pro Frage gewinnt die seltenere Antwort, gleiche Antworten zählen für keinen.
+- **Profile:** Name (2–10 Zeichen) und Passwort, Anmeldung auf jedem Gerät. Mit Profilbild (Symbol oder eigenes Foto), Statistiken, Match-Historie, Abzeichen und Link zum Teilen (`?spieler=…`).
+- **Level und Rangliste:** Jede Runde bringt XP. Tagesrätsel und Duell zählen mit vollen Punkten, das freie Spiel mit den halben. Dazu gibt es 100 XP je Duellsieg und 150 XP je Tagessieg (sobald der Tag vorbei ist). Level 2 gibt es ab 200 XP, Level 3 ab 500, Level 5 ab 1.400, Level 10 ab 5.400.
+- **Ton und Design:** Oben rechts lassen sich die Töne ausschalten und das helle oder dunkle Design wählen.
 
 ## Gut zu wissen
 
-- **Profile:** Name (2–10 Zeichen) und Passwort. Mit Profil kann man sich auf jedem Gerät anmelden; Tagesrätsel und Duelle gibt es nur mit Profil, das freie Spiel geht auch ohne. Beim Erstellen werden die bisherigen Spiele auf dem Gerät übernommen. Nach 8 falschen Passwörtern ist ein Profil 15 Minuten gesperrt.
+- **Profilbilder:** Vom Foto wird im Browser nur ein kleiner runder Ausschnitt (192 × 192 Pixel) erzeugt und gespeichert; das Original verlässt das Gerät nicht. Profilbilder sind für alle sichtbar und werden nicht geprüft. Ein Bild entfernen kannst du im SQL Editor: `update accounts set avatar = null where name_key = lower('NAME');`
 - **Ein Versuch pro Profil:** Jedes Profil kann das Tagesrätsel einmal am Tag spielen – egal auf welchem Gerät.
-- **Punkte:** Die Datenbank berechnet die Punkte selbst aus den erreichten Stufen und lässt Ergebnisse nur wachsen, nie zurücksetzen oder nachträglich ändern. Ganz verhindern lässt sich Schummeln bei einem Spiel ohne Anmeldung aber nicht.
-- **Namen:** kommen immer aus dem Profil, niemand kann sich als jemand anderes eintragen. Es gibt keinen Wortfilter. Einträge löschen kannst du im Supabase-Dashboard unter **Table Editor → scores** bzw. **duels**.
+- **Punkte:** Die Datenbank berechnet Punkte und XP selbst aus den erreichten Stufen und lässt Ergebnisse nur wachsen. Im freien Spiel zählen höchstens eine Runde alle 20 Sekunden und 60 Runden pro Tag. Ganz verhindern lässt sich Schummeln bei so einem Spiel aber nicht.
+- **Namen:** kommen immer aus dem Profil, niemand kann sich als jemand anderes eintragen. Es gibt keinen Wortfilter. Einträge löschen kannst du im Supabase-Dashboard unter **Table Editor → scores**, **duels** bzw. **accounts**.
 - **Passwort vergessen:** Es gibt keine E-Mail-Wiederherstellung. Im SQL Editor kannst du ein neues Passwort setzen: `update accounts set pw_hash = extensions.crypt('NEUES-PASSWORT', extensions.gen_salt('bf', 8)) where name_key = lower('NAME');`
 - **Supabase-Gratisprojekte** werden nach längerer Zeit ohne Nutzung pausiert. Dann im Dashboard auf **Restore** klicken.
-- **Ohne Supabase** (leere `config.js`) läuft das Spiel trotzdem – nur ohne Tagesrätsel-Bestenliste.
+- **Ohne Supabase** (leere `config.js`) läuft das freie Spiel trotzdem – nur ohne Tagesrätsel, Duelle und Profile.
