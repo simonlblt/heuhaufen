@@ -239,3 +239,6 @@ grant execute on function public.get_profile(text, text) to anon, authenticated;
 grant execute on function public.get_board2(date, text) to anon, authenticated;
 grant execute on function public.get_board(date) to anon, authenticated;
 grant execute on function public.get_duel(text, text) to anon, authenticated;
+
+-- Supabase die neuen Funktionen sofort bekannt machen.
+notify pgrst, 'reload schema';

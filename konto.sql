@@ -359,3 +359,6 @@ grant execute on function public.set_name(uuid, uuid, text) to anon, authenticat
 grant execute on function public.create_duel(text, text, text[]) to anon, authenticated;
 grant execute on function public.join_duel(text, text, text) to anon, authenticated;
 grant execute on function public.get_profile(text, text) to anon, authenticated;
+
+-- Supabase die neuen Funktionen sofort bekannt machen.
+notify pgrst, 'reload schema';

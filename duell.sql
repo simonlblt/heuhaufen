@@ -227,3 +227,6 @@ grant execute on function public.create_duel(text, text, text[]) to anon, authen
 grant execute on function public.join_duel(text, text, text) to anon, authenticated;
 grant execute on function public.save_duel(text, uuid, smallint[], text[], boolean) to anon, authenticated;
 grant execute on function public.get_duel(text, text) to anon, authenticated;
+
+-- Supabase die neuen Funktionen sofort bekannt machen.
+notify pgrst, 'reload schema';

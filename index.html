@@ -3094,7 +3094,11 @@ function renderAuth(){
       continueAfterAuth(tok.after);
     }catch(e){
       if (state!==tok) return;
-      btn.disabled=false; err.textContent=AUTH_ERR[e && e.code] || "Das hat nicht geklappt. Versuch es nochmal.";
+      btn.disabled=false;
+      const code=e && e.code;
+      err.textContent = AUTH_ERR[code]
+        || (e && e.status===404 ? "Die Datenbank ist noch nicht fertig eingerichtet: In Supabase fehlt noch das Skript konto.sql."
+        : `Das hat nicht geklappt. (${String(code||"unbekannter Fehler").slice(0,140)})`);
     }
   };
 }
