@@ -13,6 +13,7 @@ Das Ratespiel, bei dem seltene Antworten die meisten Punkte bringen – mit Tage
 | `supabase.sql` | Einrichtungs-Skript für die Datenbank (Tagesrätsel) |
 | `duell.sql` | Einrichtungs-Skript für das Duell |
 | `profil.sql` | Einrichtungs-Skript für Spielerprofile und Match-Historie |
+| `konto.sql` | Einrichtungs-Skript für Profile mit Name und Passwort |
 
 ## Einrichten (einmalig, kostenlos)
 
@@ -42,11 +43,16 @@ Im Supabase-Projekt links **SQL Editor** öffnen, den kompletten Inhalt von `due
 
 Im **SQL Editor** den kompletten Inhalt von `profil.sql` einfügen und **Run** klicken (erst nachdem `supabase.sql` und `duell.sql` gelaufen sind). Danach gibt es oben rechts den Knopf **Profil**: Siegquote, gewonnene Fragen, Ø Punkte, Nadeln, Tagesrätsel-Statistik, häufigste Gegner und die letzten 30 Duelle. Namen in der Bestenliste und im Duell führen zum Profil des Spielers; Profile lassen sich per Link teilen (`?spieler=…`).
 
+### 5. Profile mit Anmeldung (einmalig)
+
+Im **SQL Editor** den kompletten Inhalt von `konto.sql` einfügen und **Run** klicken (nach den anderen drei Skripten). Danach kann man oben rechts unter **Anmelden** ein Profil mit Name und Passwort erstellen und sich auf jedem Gerät damit anmelden. Die 3-Zeichen-Kürzel entfallen – Namen dürfen bis zu 10 Zeichen haben.
+
 ## Gut zu wissen
 
-- **Profil pro Gerät:** Profil, Statistik und Historie hängen an der Kennung im Browser. Ein anderes Gerät oder gelöschte Browserdaten bedeuten ein neues Profil.
-- **Ein Versuch pro Gerät:** Ohne Anmeldung merkt sich das Spiel im Browser, dass heute schon gespielt wurde. Wer den Browser-Speicher löscht oder ein anderes Gerät nimmt, kann nochmal spielen.
+- **Profile:** Name (2–10 Zeichen) und Passwort. Mit Profil kann man sich auf jedem Gerät anmelden; Tagesrätsel und Duelle gibt es nur mit Profil, das freie Spiel geht auch ohne. Beim Erstellen werden die bisherigen Spiele auf dem Gerät übernommen. Nach 8 falschen Passwörtern ist ein Profil 15 Minuten gesperrt.
+- **Ein Versuch pro Profil:** Jedes Profil kann das Tagesrätsel einmal am Tag spielen – egal auf welchem Gerät.
 - **Punkte:** Die Datenbank berechnet die Punkte selbst aus den erreichten Stufen und lässt Ergebnisse nur wachsen, nie zurücksetzen oder nachträglich ändern. Ganz verhindern lässt sich Schummeln bei einem Spiel ohne Anmeldung aber nicht.
-- **Kürzel:** 3 Zeichen (A–Z, 0–9, Ä, Ö, Ü), einmal pro Tagesergebnis. Es gibt keinen Wortfilter. Einträge löschen kannst du im Supabase-Dashboard unter **Table Editor → scores**.
+- **Namen:** kommen immer aus dem Profil, niemand kann sich als jemand anderes eintragen. Es gibt keinen Wortfilter. Einträge löschen kannst du im Supabase-Dashboard unter **Table Editor → scores** bzw. **duels**.
+- **Passwort vergessen:** Es gibt keine E-Mail-Wiederherstellung. Im SQL Editor kannst du ein neues Passwort setzen: `update accounts set pw_hash = extensions.crypt('NEUES-PASSWORT', extensions.gen_salt('bf', 8)) where name_key = lower('NAME');`
 - **Supabase-Gratisprojekte** werden nach längerer Zeit ohne Nutzung pausiert. Dann im Dashboard auf **Restore** klicken.
 - **Ohne Supabase** (leere `config.js`) läuft das Spiel trotzdem – nur ohne Tagesrätsel-Bestenliste.

@@ -388,6 +388,16 @@ footer{font-size:12px; color:var(--muted); text-align:center; max-width:60ch; ma
 @media (max-width:560px){ .ptiles.small{grid-template-columns:repeat(2, minmax(0,1fr))} }
 .brow .tag.plink{font-size:22px; letter-spacing:.12em; text-decoration-thickness:2px}
 
+/* Anmeldung */
+.authform{display:flex; flex-direction:column; gap:8px; max-width:440px}
+.authform label{font-weight:700; margin-top:6px}
+.authform input{font:inherit; font-size:20px; font-weight:600; padding:11px 14px; border:2px solid var(--ink); border-radius:12px; background:var(--bg); color:var(--ink); min-width:0}
+.authform .row{margin-top:8px}
+.brow .tag{font-size:19px; letter-spacing:.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%}
+.brow .tag.plink{font-size:19px; letter-spacing:.04em}
+.vside .tagname{font-size:clamp(16px, 4.6vw, 24px); overflow-wrap:anywhere; letter-spacing:.03em}
+.drecent .chipbtn{letter-spacing:.06em}
+
 /* Desktop: die Breite nutzen */
 @media (min-width: 960px){
   body{padding-block:28px 56px}
@@ -2379,6 +2389,7 @@ function loadLocal(){
   if (!d || typeof d!=="object") d={};
   if (typeof d.playerId!=="string" || d.playerId.length<8 || d.playerId.length>64) d.playerId=newId();
   if (!d.days || typeof d.days!=="object") d.days={};
+  if (d.account && (typeof d.account!=="object" || typeof d.account.name!=="string")) d.account=null;
   const keys=Object.keys(d.days).sort().reverse(); keys.slice(14).forEach(k=>delete d.days[k]);
   return d;
 }
@@ -2386,7 +2397,9 @@ let local=loadLocal();
 function saveLocal(){ try{ localStorage.setItem(DKEY, JSON.stringify(local)); }catch(e){} }
 saveLocal();
 const myEntry=key=>local.days[key]||null;
-let lastTag=""; try{ lastTag=localStorage.getItem("heuhaufen:tag")||""; }catch(e){}
+const account=()=>local.account && local.account.name ? local.account : null;
+const NAME_RE=/^[A-Za-z0-9ÄÖÜäöüß_.\-]{2,10}$/;
+const cleanName=v=>String(v||"").replace(/[^A-Za-z0-9ÄÖÜäöüß_.\-]/g,"").slice(0,10);
 
 async function rpc(fn, args){
   const headers={"apikey":SB_KEY, "Content-Type":"application/json", "Accept":"application/json"};
@@ -2433,7 +2446,7 @@ function dailyCardHTML(){
     const m=myEntry(key);
     if (m){
       text = m.unknown ? "Auf diesem Gerät wurde das heutige Rätsel schon gespielt. Morgen gibt’s neue Fragen."
-        : `Heute gespielt: <b>${Number(m.score)||0} Punkte</b>${m.name?` als <b>${esc(cleanTag(m.name))}</b>`:""}. Morgen gibt’s neue Fragen.`;
+        : `Heute gespielt: <b>${Number(m.score)||0} Punkte</b>${m.name?` als <b>${esc(cleanName(m.name))}</b>`:""}. Morgen gibt’s neue Fragen.`;
       acts=`<button class="btn light" id="dailyGo" type="button">Bestenliste ansehen</button>${m.unknown?"":`<span class="tiers">${tiersRow(Array.isArray(m.tiers)?m.tiers:[])}</span>`}`;
     } else {
       text="5 Fragen – für alle dieselben. Du hast genau einen Versuch, danach landest du in der Bestenliste.";
@@ -2449,6 +2462,7 @@ function wireDailyCard(){ if ($("dailyGo")) $("dailyGo").onclick=openDaily; }
 
 function openDaily(){
   if (!dailyAvailable()) return;
+  if (!account()) return openAuth({to:"daily"}, "register", "Fürs Tagesrätsel brauchst du ein Profil – dann steht dein Ergebnis unter deinem Namen in der Bestenliste.");
   const key=dayKey();
   if (myEntry(key)) return openBoard(key);
   state={screen:"dintro", key}; render();
@@ -2463,7 +2477,7 @@ function renderDIntro(){
     <h2>Ein Versuch. Fünf Fragen. Alle spielen dieselben.</h2>
     <ul class="rules">
       <li>${I_FLAG}<span><b>Nur ein Versuch.</b> Wer mittendrin abbricht, hat den Versuch trotzdem verbraucht.</span></li>
-      <li>${I_TROPHY}<span><b>Am Ende trägst du dein Kürzel ein</b> – 3 Zeichen, zum Beispiel „ANA“ oder „K42“ – und landest in der Bestenliste.</span></li>
+      <li>${I_TROPHY}<span><b>Du spielst als ${esc(account()?account().name:"")}.</b> Dein Ergebnis steht sofort in der Bestenliste.</span></li>
       <li>${I_CLOCK}<span><b>Um Mitternacht (deutsche Zeit) gibt es neue Fragen.</b> Bis dahin dauert es noch ${untilNext()}.</span></li>
     </ul>
     <div class="row">
@@ -2486,6 +2500,7 @@ async function startDaily(){
     if (state.screen!=="dintro") return;
     if (e.code==="already_played"){ local.days[key]={unknown:true, score:0, tiers:[], name:""}; saveLocal(); return openBoard(key); }
     btn.disabled=false;
+    if (e.code==="need_account"){ local.account=null; saveLocal(); updateHeader(); return openAuth({to:"daily"}, "login", "Bitte melde dich nochmal an."); }
     $("dErr").textContent = e.code==="wrong_day" ? "Das Datum passt nicht zum heutigen Rätsel. Lade die Seite neu."
       : "Das Tagesrätsel konnte nicht gestartet werden. Prüf deine Verbindung und versuch es nochmal.";
     return;
@@ -2494,35 +2509,11 @@ async function startDaily(){
   if (!row || !row.id || !row.secret){ btn.disabled=false; $("dErr").textContent="Das Tagesrätsel konnte nicht gestartet werden. Versuch es nochmal."; return; }
   local.days[key]={id:row.id, secret:row.secret, score:0, tiers:[], name:"", status:"playing", startedAt:Date.now()};
   saveLocal();
+  if (account()) queueOwn(key, {name:account().name});
   if (state.screen!=="dintro") return;
   beginWith(dailyPick(key).map(getQ), "", {key});
 }
 
-function cleanTag(v){ return String(v||"").toUpperCase().replace(/[^A-Z0-9ÄÖÜ]/g,"").slice(0,3); }
-function nameFormHTML(sub){
-  return `<form class="tagform" id="tagForm" autocomplete="off" novalidate>
-    <div class="tagtext"><b>Trag dich in die Bestenliste ein</b><span class="hint">${sub||"Dein Kürzel aus 3 Zeichen – Buchstaben oder Zahlen."}</span></div>
-    <input id="tagIn" name="tagIn" maxlength="12" value="${esc(cleanTag(lastTag))}" aria-label="Spielerkürzel aus 3 Zeichen" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done">
-    <button class="btn" id="tagSave" type="submit">Eintragen</button>
-    <p class="fb bad" id="tagErr" role="alert"></p>
-  </form>`;
-}
-function wireTagForm(key, done){
-  const f=$("tagForm"), inp=$("tagIn"), btn=$("tagSave"), err=$("tagErr");
-  if (!f) return;
-  const sync=()=>{ const c=cleanTag(inp.value); if (inp.value!==c) inp.value=c; btn.disabled=c.length!==3; };
-  inp.oninput=sync; sync();
-  f.onsubmit=async ev=>{
-    ev.preventDefault();
-    const tag=cleanTag(inp.value);
-    if (tag.length!==3){ err.textContent="Das Kürzel braucht genau 3 Zeichen."; return; }
-    btn.disabled=true; inp.disabled=true; err.textContent="";
-    const res=await queueOwn(key, {name:tag});
-    if (res!==true){ inp.disabled=false; sync(); err.textContent="Das Speichern hat nicht geklappt. Prüf deine Verbindung und versuch es nochmal."; return; }
-    lastTag=tag; try{ localStorage.setItem("heuhaufen:tag", tag); }catch(e){}
-    done(tag);
-  };
-}
 
 let boardTimer=null, boardData=null, boardBusy=false;
 function openBoard(key){
@@ -2550,7 +2541,7 @@ function subscribeBoard(){
   boardTimer=setInterval(load, 15000);
 }
 function mkRow(me, e){
-  return {me, pid:typeof e.pid==="string"?e.pid:null, name:cleanTag(e.name), score:Math.max(0, Math.min(ROUND_LEN*100, Math.round(Number(e.score)||0))),
+  return {me, pid:typeof e.pid==="string"?e.pid:null, name:cleanName(e.name), score:Math.max(0, Math.min(ROUND_LEN*100, Math.round(Number(e.score)||0))),
     tiers:(Array.isArray(e.tiers)?e.tiers:[]).slice(0,ROUND_LEN).map(Number), t:Number(e.sort_time||e.startedAt)||0};
 }
 function boardRows(key){
@@ -2559,7 +2550,7 @@ function boardRows(key){
     const me=d.me===true || d.player_id===local.playerId;
     if (me) haveMe=true;
     const e = me && mine && !mine.unknown ? Object.assign({}, d, {name:mine.name||d.name, score:mine.score, tiers:mine.tiers}) : d;
-    if (!cleanTag(e.name) && !me) continue;
+    if (!cleanName(e.name) && !me) continue;
     rows.push(mkRow(me, e));
   }
   if (!haveMe && mine && !mine.unknown) rows.push(mkRow(true, {name:mine.name, score:mine.score, tiers:mine.tiers, t:mine.startedAt}));
@@ -2577,7 +2568,6 @@ function rowHTML(r){
 }
 function renderBoard(){
   const key=state.key, entry=myEntry(key);
-  const showForm=!!entry && !entry.unknown && !!entry.id && !cleanTag(entry.name);
   view.innerHTML=`<section class="card stack boardcard">
     <div class="boardhead">
       <div class="stack" style="gap:4px"><span class="label">Tagesrätsel · Bestenliste</span><h2>${dayLabel(key)}</h2></div>
@@ -2587,7 +2577,6 @@ function renderBoard(){
     <div class="bmain"><div id="boardList" class="o-list"></div></div>
     <div class="bside">
     <div id="boardMine" class="o-mine"></div>
-    ${showForm?`<div class="o-form">${nameFormHTML("Noch ohne Kürzel – trag dich ein, damit die anderen dich sehen.")}</div>`:""}
     ${entry && entry.unknown ? `<div class="o-form">${noteHTML(I_FLAG, "Auf diesem Gerät wurde das heutige Rätsel schon gespielt.")}</div>` : ""}
     ${!entry ? `<div class="row o-play"><button class="btn" id="playDaily" type="button">Tagesrätsel spielen</button></div>` : ""}
     ${entry?`<details class="qs o-qs"><summary>Die Fragen von heute</summary><ol>${dailyPick(key).map(i=>`<li>${esc(BANK[i].q)}</li>`).join("")}</ol></details>`:""}
@@ -2601,7 +2590,6 @@ function renderBoard(){
   if ($("playDaily")) $("playDaily").onclick=()=>{ state={screen:"dintro", key:dayKey()}; render(); };
   $("freeGo").onclick=startRound;
   $("menu2").onclick=()=>{ state={screen:"start"}; render(); };
-  if (showForm) wireTagForm(key, ()=>{ const f=$("tagForm"); if (f) (f.closest(".o-form")||f).remove(); updateBoard(); });
   updateBoard();
 }
 function updateBoard(){
@@ -2645,7 +2633,7 @@ function pickDuelQs(){
   return pick;
 }
 const I_VS = svg(`<path d="M4.5 19.5L17 7" stroke-width="2.2"/><path d="M19.5 19.5L7 7" stroke-width="2.2"/><ellipse cx="18.3" cy="5.7" rx="2" ry="1.1" transform="rotate(-45 18.3 5.7)" stroke-width="1.5"/><ellipse cx="5.7" cy="5.7" rx="2" ry="1.1" transform="rotate(45 5.7 5.7)" stroke-width="1.5"/>`);
-const DUEL_ERR={not_found:"Dieses Duell gibt es nicht. Prüf den Link.", taken:"Dieses Duell hat schon jemand anderes angenommen.",
+const DUEL_ERR={need_account:"Dafür brauchst du ein Profil. Bitte melde dich an.", not_found:"Dieses Duell gibt es nicht. Prüf den Link.", taken:"Dieses Duell hat schon jemand anderes angenommen.",
   too_many:"Du hast heute schon sehr viele Duelle gestartet. Morgen geht’s weiter.", network:"Keine Verbindung. Prüf dein Internet und versuch es nochmal.",
   gone:"Dieses Duell nutzt Fragen, die es nicht mehr gibt."};
 const duelErr=e=>DUEL_ERR[e && e.code] || "Das hat nicht geklappt. Versuch es nochmal.";
@@ -2665,29 +2653,6 @@ function saveDuelDone(){
   saveDuel(s.duel, s.results, true).then(res=>{ if (state!==s) return; const w=$("saveWarn"); if (w) w.hidden = res===true; });
 }
 
-/* Eingabe für das Kürzel */
-function duelTagFormHTML(label){
-  return `<form class="tagform" id="duTag" autocomplete="off" novalidate>
-    <div class="tagtext"><b>Dein Kürzel</b><span class="hint">3 Zeichen – so sieht dein Gegner, wer du bist.</span></div>
-    <input id="duTagIn" maxlength="12" value="${esc(cleanTag(lastTag))}" aria-label="Spielerkürzel aus 3 Zeichen" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go">
-    <button class="btn" id="duGo" type="submit">${label}</button>
-    <p class="fb bad" id="duErr" role="alert"></p>
-  </form>`;
-}
-function wireDuelTag(onTag){
-  const f=$("duTag"), inp=$("duTagIn"), btn=$("duGo"), err=$("duErr");
-  const sync=()=>{ const c=cleanTag(inp.value); if (inp.value!==c) inp.value=c; btn.disabled=c.length!==3; };
-  inp.oninput=sync; sync();
-  f.onsubmit=async ev=>{
-    ev.preventDefault();
-    const tag=cleanTag(inp.value);
-    if (tag.length!==3){ err.textContent="Das Kürzel braucht genau 3 Zeichen."; return; }
-    btn.disabled=true; inp.disabled=true; err.textContent="";
-    lastTag=tag; try{ localStorage.setItem("heuhaufen:tag", tag); }catch(e){}
-    const msg=await onTag(tag);
-    if (msg && $("duErr")){ $("duErr").textContent=msg; inp.disabled=false; sync(); }
-  };
-}
 
 /* Startseite: Karte für das Duell */
 function duelStartHTML(){
@@ -2700,12 +2665,22 @@ function duelStartHTML(){
   </div>`;
 }
 function wireDuelStart(){
-  if ($("duelGo")) $("duelGo").onclick=()=>{ state={screen:"duelnew"}; render(); };
+  if ($("duelGo")) $("duelGo").onclick=()=>{ if (!account()) return openAuth({to:"duelnew"}, "register", "Fürs Duell brauchst du ein Profil – so sieht dein Gegner, wer ihn herausfordert."); state={screen:"duelnew"}; render(); };
   document.querySelectorAll("#duelCard [data-code]").forEach(b=>{ b.onclick=()=>openDuel(b.dataset.code); });
 }
 
 /* Neues Duell anlegen */
+function wireDuelGo(run){
+  const btn=$("duGo"), err=$("duErr");
+  btn.onclick=async()=>{
+    if (btn.disabled) return;
+    btn.disabled=true; err.textContent="";
+    const msg=await run();
+    if (msg && $("duErr")){ $("duErr").textContent=msg; btn.disabled=false; }
+  };
+}
 function renderDuelNew(){
+  if (dailyAvailable() && !account()){ openAuth({to:"duelnew"}, "register", "Fürs Duell brauchst du ein Profil – so sieht dein Gegner, wer ihn herausfordert."); return; }
   if (!dailyAvailable()){
     view.innerHTML=`<section class="card stack narrow"><span class="label">Duell</span><h2>Das Duell ist noch nicht eingerichtet.</h2><p class="hint">Dafür braucht die Seite die Verbindung zur Datenbank.</p><div class="row"><button class="btn ghost" id="menu3" type="button">Zum Start</button></div></section>`;
     $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
@@ -2719,11 +2694,12 @@ function renderDuelNew(){
       <li>${I_TROPHY}<span><b>Pro Frage gewinnt die seltenere Antwort.</b> Wer mehr Fragen holt, gewinnt das Duell. Bei Gleichstand zählen die Punkte.</span></li>
       <li>${I_FLAG}<span><b>Gleiche Antwort zählt für keinen.</b> Das Naheliegende ist also doppelt riskant.</span></li>
     </ul>
-    ${duelTagFormHTML("Fragen auslosen & los")}
+    <div class="row"><button class="btn" id="duGo" type="button">Fragen auslosen & los</button><span class="hint">Du spielst als <b>${esc(account()?account().name:"")}</b></span></div>
+    <p class="fb bad" id="duErr" role="alert"></p>
     <div class="row"><button class="btn ghost small" id="menu3" type="button">Zurück</button></div>
   </section>`;
   $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
-  wireDuelTag(createDuel);
+  wireDuelGo(()=>createDuel(account().name));
 }
 async function createDuel(tag){
   const qi=pickDuelQs();
@@ -2793,11 +2769,18 @@ function renderDuelInvite(){
       <li>${I_TROPHY}<span><b>Pro Frage gewinnt die seltenere Antwort.</b> Wer mehr Fragen holt, gewinnt. Bei Gleichstand zählen die Punkte.</span></li>
       <li>${I_FLAG}<span><b>Gleiche Antwort zählt für keinen.</b> Was ${esc(d.a.name)} geantwortet hat, siehst du erst am Ende.</span></li>
     </ul>
-    ${duelTagFormHTML("Annehmen & spielen")}
+    ${account() ? `<div class="row"><button class="btn" id="duGo" type="button">Annehmen & spielen</button><span class="hint">als <b>${esc(account().name)}</b></span></div>`
+      : `<p class="note">${I_USER}<span>Zum Annehmen brauchst du ein Profil – das geht in ein paar Sekunden.</span></p>
+         <div class="row"><button class="btn" id="duReg" type="button">Profil erstellen & annehmen</button><button class="btn ghost" id="duLog" type="button">Anmelden</button></div>`}
+    <p class="fb bad" id="duErr" role="alert"></p>
     <div class="row"><button class="btn ghost small" id="menu3" type="button">Lieber nicht</button></div>
   </section>`;
   $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
-  wireDuelTag(tag=>joinDuel(d, tag));
+  if (account()) wireDuelGo(()=>joinDuel(d, account().name));
+  else {
+    $("duReg").onclick=()=>openAuth({to:"join", code:d.code}, "register", `${d.a.name} fordert dich heraus – erstell kurz ein Profil, dann geht's los.`);
+    $("duLog").onclick=()=>openAuth({to:"join", code:d.code}, "login", `${d.a.name} fordert dich heraus – melde dich an, dann geht's los.`);
+  }
 }
 async function joinDuel(d, tag){
   const qi=d.qids.map(qIndex);
@@ -2942,7 +2925,7 @@ function renderProfile(){
   const n=v=>Number(v)||0;
   const played=n(du.played), wins=n(du.wins), losses=n(du.losses), draws=n(du.draws);
   const rw=n(du.rounds_won), rl=n(du.rounds_lost);
-  const name=cleanTag(d.name) || (d.me ? cleanTag(lastTag) : "") || "???";
+  const name=cleanName(d.name) || (d.me && account() ? account().name : "") || "???";
   const tile=(v,l,hl)=>`<div class="ptile${hl?" hl":""}"><b>${v}</b><span>${l}</span></div>`;
   const dash=v=>v==null ? "–" : n(v);
   const res={win:"Sieg", loss:"Niederlage", draw:"Remis", open:"Offen"};
@@ -2960,11 +2943,11 @@ function renderProfile(){
       </li>`; }).join("")}</ol>`
     : `<p class="hint">${d.me?"Noch keine Duelle – fordere jemanden heraus!":"Noch keine abgeschlossenen Duelle."}</p>`;
   const rivals=Array.isArray(d.rivals) ? d.rivals : [];
-  const rivalsHTML = rivals.length ? `<ul class="rivals">${rivals.map(r=>`<li>${pidBtn(r.pid, cleanTag(r.name)||"???")}<span class="hint">${n(r.games)} ${n(r.games)===1?"Duell":"Duelle"}</span><b title="Siege : Niederlagen">${n(r.wins)}:${n(r.losses)}</b></li>`).join("")}</ul>`
+  const rivalsHTML = rivals.length ? `<ul class="rivals">${rivals.map(r=>`<li>${pidBtn(r.pid, cleanName(r.name)||"???")}<span class="hint">${n(r.games)} ${n(r.games)===1?"Duell":"Duelle"}</span><b title="Siege : Niederlagen">${n(r.wins)}:${n(r.losses)}</b></li>`).join("")}</ul>`
     : `<p class="hint">Noch keine Gegner.</p>`;
   view.innerHTML=`<section class="card stack profile">
     <div class="phead">
-      <div class="pavatar" aria-hidden="true">${esc(name)}</div>
+      <div class="pavatar" aria-hidden="true">${esc(name.slice(0,2).toUpperCase())}</div>
       <div class="stack" style="gap:4px;min-width:0">
         <span class="label">Spielerprofil</span>
         <h2><span class="tagname">${esc(name)}</span>${d.me?` <span class="you">Du</span>`:""}</h2>
@@ -2999,13 +2982,17 @@ function renderProfile(){
         </div></div>`:""}
       </div>
     </div>
+    ${d.me && !account() ? `<p class="note">${I_USER}<span><b>Du spielst gerade ohne Profil.</b> Erstell eins, dann bleiben deine Statistiken erhalten und du kannst dich auf jedem Gerät anmelden.</span></p>` : ""}
     <div class="row">
-      <button class="btn" id="duNew2" type="button">Duell starten</button>
+      ${d.me && !account() ? `<button class="btn" id="profReg" type="button">Profil erstellen</button>` : `<button class="btn" id="duNew2" type="button">Duell starten</button>`}
       <button class="btn ghost small" id="menu3" type="button">Zum Start</button>
+      ${d.me && account() ? `<button class="btn ghost small" id="logoutBtn" type="button">Abmelden</button>` : ""}
     </div>
   </section>`;
   $("menu3").onclick=goStart;
-  $("duNew2").onclick=()=>{ state={screen:"duelnew"}; render(); };
+  if ($("profReg")) $("profReg").onclick=()=>openAuth({to:"profile"}, "register");
+  if ($("logoutBtn")) $("logoutBtn").onclick=()=>{ if (confirm("Abmelden? Du kannst dich jederzeit wieder mit Name und Passwort anmelden.")) logout(); };
+  if ($("duNew2")) $("duNew2").onclick=()=>{ state={screen:"duelnew"}; render(); };
   view.querySelectorAll(".mopen").forEach(b=>{ b.onclick=()=>openDuel(b.dataset.code); });
   wirePidLinks(view);
   $("profShare").onclick=async()=>{
@@ -3013,6 +3000,102 @@ function renderProfile(){
     if (navigator.share){ try{ await navigator.share({title:"Heuhaufen-Profil", text, url}); return; }catch(e){ if (e && e.name==="AbortError") return; } }
     try{ await navigator.clipboard.writeText(url); $("profMsg").textContent="Link zum Profil kopiert."; }
     catch(e){ $("profMsg").textContent=url; }
+  };
+}
+
+/* ======================= Profil: erstellen, anmelden, abmelden ======================= */
+function updateHeader(){
+  const pb=$("profBtn"); if (!pb) return;
+  if (!dailyAvailable()){ pb.hidden=true; return; }
+  const a=account();
+  pb.hidden=false;
+  pb.querySelector("span").textContent = a ? a.name : "Anmelden";
+  pb.onclick=()=> account() ? openProfile(null) : openAuth({to:"profile"}, "register");
+}
+function openAuth(after, mode, msg){ state={screen:"auth", mode:mode||"register", after:after||null, msg:msg||""}; render(); }
+function adoptIdentity(player, name){
+  if (player!==local.playerId){ local.playerId=player; local.days={}; duelLocal={}; saveDuelLocal(); }
+  local.account={name}; saveLocal(); updateHeader();
+}
+function logout(){
+  local.playerId=newId(); local.account=null; local.days={}; saveLocal();
+  duelLocal={}; saveDuelLocal(); updateHeader();
+  goStart();
+}
+function continueAfterAuth(after){
+  const to=after && after.to;
+  if (to==="daily") return openDaily();
+  if (to==="duelnew"){ state={screen:"duelnew"}; render(); return; }
+  if (to==="join") return openDuel(after.code);
+  if (to==="profile") return openProfile(null);
+  goStart();
+}
+const AUTH_ERR={name_taken:"Diesen Namen gibt es schon. Nimm einen anderen – oder melde dich an, wenn es deiner ist.",
+  bad_name:"Der Name braucht 2–10 Zeichen: Buchstaben, Zahlen, _ . oder -.", bad_password:"Das Passwort braucht mindestens 6 Zeichen.",
+  wrong_login:"Name oder Passwort stimmt nicht.", network:"Keine Verbindung. Prüf dein Internet und versuch es nochmal."};
+function renderAuth(){
+  const reg=state.mode!=="login";
+  view.innerHTML=`<section class="card stack narrow">
+    <span class="label">Profil</span>
+    <h2>${reg?"Erstell dein Profil.":"Willkommen zurück!"}</h2>
+    ${state.msg?noteHTML(I_FLAG, esc(state.msg)):""}
+    <div class="row"><div class="seg" role="group" aria-label="Profil">
+      <button type="button" id="auReg" aria-pressed="${reg}">Neues Profil</button>
+      <button type="button" id="auLog" aria-pressed="${!reg}">Anmelden</button>
+    </div></div>
+    <form class="authform" id="authForm" novalidate>
+      <label for="auName">Name</label>
+      <input id="auName" name="username" maxlength="10" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next">
+      ${reg?`<span class="hint">2–10 Zeichen: Buchstaben, Zahlen, _ . oder -</span>`:""}
+      <label for="auPw">Passwort</label>
+      <input id="auPw" name="password" type="password" maxlength="72" autocomplete="${reg?"new-password":"current-password"}" enterkeyhint="go">
+      ${reg?`<span class="hint">Mindestens 6 Zeichen. Merk es dir gut – ohne E-Mail lässt es sich nicht zurücksetzen.</span>`:""}
+      <div class="row"><button class="btn" id="auGo" type="submit">${reg?"Profil erstellen":"Anmelden"}</button></div>
+      <p class="fb bad" id="auErr" role="alert"></p>
+    </form>
+    <p class="hint">${reg?"Mit Profil spielst du Tagesrätsel und Duelle unter deinem Namen und kannst dich auf jedem Gerät anmelden. Was du auf diesem Gerät schon gespielt hast, wird übernommen."
+      :"Danach spielst du auf diesem Gerät mit deinem Profil – mit all deinen Statistiken und Duellen."}</p>
+    <div class="row"><button class="btn ghost small" id="menu3" type="button">Zurück</button></div>
+  </section>`;
+  $("menu3").onclick=goStart;
+  $("auReg").onclick=()=>{ state.mode="register"; render(); };
+  $("auLog").onclick=()=>{ state.mode="login"; render(); };
+  const nm=$("auName"), pw=$("auPw"), err=$("auErr"), btn=$("auGo");
+  nm.oninput=()=>{ const c=cleanName(nm.value); if (c!==nm.value) nm.value=c; };
+  nm.focus({preventScroll:true});
+  $("authForm").onsubmit=async ev=>{
+    ev.preventDefault();
+    const name=cleanName(nm.value), pass=pw.value;
+    if (!NAME_RE.test(name)){ err.textContent=reg ? AUTH_ERR.bad_name : AUTH_ERR.wrong_login; return; }
+    if (pass.length<6){ err.textContent=reg ? AUTH_ERR.bad_password : AUTH_ERR.wrong_login; return; }
+    btn.disabled=true; err.textContent="";
+    const tok=state;
+    try{
+      if (reg){
+        let r;
+        try{ r=await rpc("register", {p_player:local.playerId, p_name:name, p_password:pass}); }
+        catch(e){
+          if (e.code!=="device_has_account") throw e;
+          local.playerId=newId(); local.days={}; saveLocal();
+          r=await rpc("register", {p_player:local.playerId, p_name:name, p_password:pass});
+        }
+        if (state!==tok) return;
+        adoptIdentity(local.playerId, (r && r.name) || name);
+      } else {
+        const r=await rpc("login", {p_name:name, p_password:pass});
+        if (state!==tok) return;
+        if (!r || !r.ok){
+          btn.disabled=false;
+          err.textContent = r && r.error==="locked" ? `Zu viele falsche Versuche. Versuch es in ${Number(r.wait)||15} Minuten nochmal.` : AUTH_ERR.wrong_login;
+          return;
+        }
+        adoptIdentity(r.player, r.name);
+      }
+      continueAfterAuth(tok.after);
+    }catch(e){
+      if (state!==tok) return;
+      btn.disabled=false; err.textContent=AUTH_ERR[e && e.code] || "Das hat nicht geklappt. Versuch es nochmal.";
+    }
   };
 }
 
@@ -3044,6 +3127,7 @@ function render(){
   if (state.screen==="duel") return renderDuel();
   if (state.screen==="profload") return renderProfLoad();
   if (state.screen==="profile") return renderProfile();
+  if (state.screen==="auth") return renderAuth();
 }
 
 /* ---------- Start ---------- */
@@ -3546,7 +3630,6 @@ function renderEnd(){
   const dly=state.daily, dl=state.duel, dEntry=dly && myEntry(dly.key);
   const shareText=`Heuhaufen${dly?" · Tagesrätsel "+dayLabel(dly.key):""} ${state.total}/${ROUND_LEN*100}\n${state.results.map(r=>r.tier>=0?EMO[r.tier]:"⬛").join("")}`;
   const actions = dl ? duelEndActionsHTML(dl) : dly ? `
-    ${dEntry && cleanTag(dEntry.name) ? "" : nameFormHTML()}
     <p class="note" id="saveWarn" hidden>${I_FLAG}<span>Dein Ergebnis konnte noch nicht gespeichert werden. <button class="btn ghost small" id="saveRetry" type="button">Nochmal speichern</button></span></p>
     <div class="row">
       <button class="btn" id="toBoard" type="button">Zur Bestenliste</button>
@@ -3585,7 +3668,6 @@ function renderEnd(){
   if (dly){
     $("toBoard").onclick=()=>openBoard(dly.key);
     $("saveRetry").onclick=()=>{ $("saveWarn").hidden=true; saveDailyDone(); };
-    wireTagForm(dly.key, ()=>openBoard(dly.key));
   }
   if (dl){
     $("toDuel").onclick=()=>openDuel(dl.code);
@@ -3604,7 +3686,7 @@ $("home").onclick=ev=>{ ev.preventDefault(); if (state.screen!=="loading"){ stat
 /* ======================= Start ======================= */
 function start(data){
   const s=data && data.state;
-  const pb=$("profBtn"); if (pb && dailyAvailable()){ pb.hidden=false; pb.onclick=()=>openProfile(null); }
+  updateHeader();
   const dq=duelParam();
   if (dq){ openDuel(dq); return; }
   const pq=profileParam();
