@@ -340,6 +340,54 @@ footer{font-size:12px; color:var(--muted); text-align:center; max-width:60ch; ma
 .linkrow{display:flex; gap:10px; flex-wrap:wrap}
 .linkrow input{flex:1 1 220px; min-width:0; font-family:var(--font-mono); font-size:15px; padding:10px 12px; border:2px solid var(--ink); border-radius:10px; background:var(--surface); color:var(--ink)}
 
+/* Kopfzeile: Profil-Knopf */
+.topright{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.profbtn{display:inline-flex; align-items:center; gap:6px; border:2px solid var(--ink); border-radius:999px; background:var(--surface); color:var(--ink); padding:4px 12px 4px 8px; font-weight:700; font-size:14px; box-shadow:2px 2px 0 var(--ink)}
+.profbtn svg{width:18px; height:18px}
+.profbtn:hover{transform:translate(-1px,-1px); box-shadow:3px 3px 0 var(--ink)}
+/* Profil */
+.plink{font:inherit; font-family:var(--font-mono); font-weight:700; letter-spacing:.06em; color:inherit; background:none; border:0; padding:0; text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; cursor:pointer}
+.plink:hover{color:var(--thread)}
+.vside.won .plink:hover,.brow.me .plink:hover{color:inherit; opacity:.8}
+.phead{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:12px 18px; align-items:center}
+.pavatar{width:76px; height:76px; border-radius:50%; background:var(--thread); color:var(--thread-ink); border:2px solid var(--ink); display:grid; place-items:center; font-family:var(--font-mono); font-weight:700; font-size:22px; letter-spacing:.06em; box-shadow:3px 3px 0 var(--ink)}
+.phead h2 .tagname{font-size:1.15em}
+@media (max-width:560px){ .phead{grid-template-columns:auto minmax(0,1fr)} .phead #profShare{grid-column:1 / -1; justify-self:start} .pavatar{width:60px; height:60px; font-size:18px} }
+.ptiles{display:grid; grid-template-columns:repeat(auto-fit, minmax(118px,1fr)); gap:10px}
+.ptile{border:2px solid var(--ink); border-radius:12px; padding:10px 12px; background:var(--bg); display:flex; flex-direction:column; gap:2px; min-width:0}
+.ptile b{font-family:var(--font-mono); font-size:26px; line-height:1.15; font-variant-numeric:tabular-nums}
+.ptile span{font-size:13px; color:var(--muted)}
+.ptile.hl{background:var(--thread); color:var(--thread-ink); box-shadow:3px 3px 0 var(--ink)}
+.ptile.hl span{color:inherit; opacity:.85}
+.ptiles.small{grid-template-columns:repeat(auto-fit, minmax(96px,1fr))}
+.ptiles.small .ptile b{font-size:21px}
+.wlbar{display:flex; height:14px; border:2px solid var(--ink); border-radius:999px; overflow:hidden; background:var(--surface)}
+.wlbar i{display:block; min-width:0}
+.wlbar .w,.wllegend .w{background:var(--ok)}
+.wlbar .d,.wllegend .d{background:var(--t0)}
+.wlbar .l,.wllegend .l{background:var(--warn)}
+.wllegend{display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--muted)}
+.wllegend i{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; border:1px solid var(--ink)}
+.pcols{display:grid; gap:24px}
+.pcols h3{font-family:var(--font-display); font-size:21px; margin:0 0 10px; letter-spacing:-.01em}
+.pcols h3 small{font-family:var(--font-body); font-weight:500; font-size:13px}
+.mhist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+.mrow{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:6px 12px; align-items:center; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--bg)}
+.mres{font-weight:800; font-size:12px; letter-spacing:.04em; text-transform:uppercase; padding:3px 10px; border-radius:999px; border:2px solid var(--ink); background:var(--surface); white-space:nowrap; text-align:center; min-width:96px}
+.r-win .mres{background:var(--ok); color:var(--surface)}
+.r-loss .mres{background:var(--warn); color:var(--surface)}
+.r-draw .mres{background:var(--t0); color:var(--tt0)}
+.mvs{display:flex; flex-direction:column; min-width:0; font-weight:600}
+.mvs small{font-weight:500; color:var(--muted); font-size:13px}
+.mdate{font-size:13px; color:var(--muted); white-space:nowrap}
+.mopen{grid-column:2 / -1; justify-self:start; padding:5px 12px; font-size:14px}
+.rivals{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+.rivals li{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px; align-items:center; padding:8px 12px; border:1.5px solid var(--line); border-radius:10px; background:var(--bg)}
+.rivals b{font-family:var(--font-mono); font-size:16px}
+.rivals .plink{justify-self:start; text-align:left}
+@media (max-width:560px){ .ptiles.small{grid-template-columns:repeat(2, minmax(0,1fr))} }
+.brow .tag.plink{font-size:22px; letter-spacing:.12em; text-decoration-thickness:2px}
+
 /* Desktop: die Breite nutzen */
 @media (min-width: 960px){
   body{padding-block:28px 56px}
@@ -382,6 +430,9 @@ footer{font-size:12px; color:var(--muted); text-align:center; max-width:60ch; ma
   .bgrid{display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:32px; align-items:start}
   .bmain,.bside{display:flex; flex-direction:column; gap:16px}
   .bside{position:sticky; top:20px}
+  .pcols{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); align-items:start; gap:36px}
+  .mrow{grid-template-columns:auto minmax(0,1fr) auto auto}
+  .mopen{grid-column:auto}
 }
 .hero-art{-webkit-user-select:none; user-select:none; touch-action:manipulation; -webkit-tap-highlight-color:transparent}
 .hero-art .egg{display:block; width:100%; max-width:210px; margin-inline:auto; aspect-ratio:1 / 1; object-fit:cover; object-position:50% 35%; border-radius:50%; border:3px solid var(--ink); box-shadow:5px 5px 0 var(--ink); background:var(--surface); animation:eggpop .55s cubic-bezier(.2,1.6,.4,1)}
@@ -406,7 +457,7 @@ document.getElementById("appRoot").insertAdjacentHTML("afterbegin", `<div class=
       </svg>
       <b>Heuhaufen</b>
     </a>
-    <div class="best" id="bestTop"></div>
+    <div class="topright"><div class="best" id="bestTop"></div><button class="profbtn" id="profBtn" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg><span>Profil</span></button></div>
   </header>
   <main id="view" class="stack"></main>
   <footer>Die Seltenheit der Antworten ist von Hand geschätzt, nicht gemessen. Unbekannte Antworten zählen nicht – probier dann einfach eine andere.</footer>
@@ -2488,7 +2539,9 @@ function subscribeBoard(){
     if (boardBusy || document.hidden) return;
     boardBusy=true;
     try{
-      const r=await rpc("get_board", {p_day:key});
+      let r;
+      try{ r=await rpc("get_board2", {p_day:key, p_player:local.playerId}); }
+      catch(e){ if (e && e.status===404) r=await rpc("get_board", {p_day:key}); else throw e; }
       if (state.screen==="board" && state.key===key){ boardData=Array.isArray(r) ? r : []; state.err=null; updateBoard(); }
     }catch(e){ if (state.screen==="board" && state.key===key){ state.err=e.code||"error"; updateBoard(); } }
     finally{ boardBusy=false; }
@@ -2497,13 +2550,13 @@ function subscribeBoard(){
   boardTimer=setInterval(load, 15000);
 }
 function mkRow(me, e){
-  return {me, name:cleanTag(e.name), score:Math.max(0, Math.min(ROUND_LEN*100, Math.round(Number(e.score)||0))),
+  return {me, pid:typeof e.pid==="string"?e.pid:null, name:cleanTag(e.name), score:Math.max(0, Math.min(ROUND_LEN*100, Math.round(Number(e.score)||0))),
     tiers:(Array.isArray(e.tiers)?e.tiers:[]).slice(0,ROUND_LEN).map(Number), t:Number(e.sort_time||e.startedAt)||0};
 }
 function boardRows(key){
   const mine=myEntry(key), rows=[]; let haveMe=false;
   for (const d of (boardData||[])){
-    const me=d.player_id===local.playerId;
+    const me=d.me===true || d.player_id===local.playerId;
     if (me) haveMe=true;
     const e = me && mine && !mine.unknown ? Object.assign({}, d, {name:mine.name||d.name, score:mine.score, tiers:mine.tiers}) : d;
     if (!cleanTag(e.name) && !me) continue;
@@ -2518,7 +2571,7 @@ function boardRows(key){
 function rowHTML(r){
   return `<li class="brow${r.me?" me":""}"${r.me?' aria-current="true"':""}>
     <span class="rank${r.rank<=3?" r"+r.rank:""}">${r.rank}</span>
-    <span class="namec"><span class="tag">${r.name?esc(r.name):"???"}</span>${r.me?`<span class="you">Du</span>`:""}</span>
+    <span class="namec">${r.pid && r.name ? pidBtn(r.pid, r.name, "tag") : `<span class="tag">${r.name?esc(r.name):"???"}</span>`}${r.me?`<span class="you">Du</span>`:""}</span>
     <span class="tiers">${tiersRow(r.tiers)}</span>
     <span class="score">${r.score}</span></li>`;
 }
@@ -2565,6 +2618,7 @@ function updateBoard(){
       <div class="tiers">${tiersRow(me.tiers)}</div></div>` : "";
   list.innerHTML = rows.length ? `<ol class="board" aria-label="Bestenliste">${rows.map(rowHTML).join("")}</ol>`
     : `<p class="hint">Noch keine Einträge für heute.</p>`;
+  wirePidLinks(list);
   if (state.err) list.insertAdjacentHTML("beforeend", `<p class="hint">Die Liste ist eventuell nicht ganz aktuell.</p>`);
 }
 
@@ -2580,7 +2634,7 @@ const qidOf=i=>hashStr(BANK[i].q).toString(36);
 let QIDX=null;
 function qIndex(id){ if (!QIDX){ QIDX=new Map(); BANK.forEach((_,i)=>QIDX.set(qidOf(i), i)); } return QIDX.get(id); }
 function duelParam(){ try{ return cleanCode(new URLSearchParams(location.search).get("duell")); }catch(e){ return ""; } }
-function clearDuelParam(){ try{ if (new URLSearchParams(location.search).has("duell")) history.replaceState(null, "", location.pathname+location.hash); }catch(e){} }
+function clearDuelParam(){ try{ const q=new URLSearchParams(location.search); if (q.has("duell") || q.has("spieler")) history.replaceState(null, "", location.pathname+location.hash); }catch(e){} }
 function duelLink(code){ let base=""; try{ base=location.origin+location.pathname; }catch(e){} return base+"?duell="+code; }
 function pickDuelQs(){
   const daily=new Set(dailyPick(dayKey()));
@@ -2812,7 +2866,7 @@ function renderDuel(){
   if (d.final){
     const o=duelOutcome(d), wn=o.winner==="a"?A.name:o.winner==="b"?B.name:"";
     head=!o.winner ? "Unentschieden!" : o.winner===role ? "Du gewinnst!" : `${esc(wn)} gewinnt!`;
-    const side=(x,k,score)=>`<div class="vside${o.winner===k?" won":""}${role===k?" me":""}"><span class="tagname">${esc(x.name)}</span>${role===k?`<span class="you">Du</span>`:""}<b class="vscore">${score}</b><small>Punkte</small></div>`;
+    const side=(x,k,score)=>`<div class="vside${o.winner===k?" won":""}${role===k?" me":""}">${pidBtn(x.pid, x.name, "tagname")}${role===k?`<span class="you">Du</span>`:""}<b class="vscore">${score}</b><small>Punkte</small></div>`;
     body=`<div class="vs">${side(A,"a",o.sa)}<div class="vmid"><b>${o.wa}:${o.wb}</b><small>Fragen</small></div>${side(B,"b",o.sb)}</div>
       <ol class="drows" lang="de">${o.rows.map((r,j)=>`<li class="drow">
         <div class="dq"><span>${j+1}.</span> ${esc(r.q)}</div>
@@ -2850,6 +2904,116 @@ function renderDuel(){
   $("freeGo").onclick=startRound;
   $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
   if (role==="a" && !B) wireShare(d.code, A.name);
+  wirePidLinks(view);
+}
+
+/* ======================= Spielerprofile & Match-Historie ======================= */
+const I_USER = svg(`<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/>`);
+let profTok=0;
+function profileParam(){ try{ const v=new URLSearchParams(location.search).get("spieler")||""; return /^[0-9a-f]{12}$/.test(v) ? v : ""; }catch(e){ return ""; } }
+function profileLink(pid){ let base=""; try{ base=location.origin+location.pathname; }catch(e){} return base+"?spieler="+pid; }
+const pct=(a,b)=>b>0 ? Math.round(a*100/b) : 0;
+const fmtDay=(ts, long)=>{ try{ return new Intl.DateTimeFormat("de-DE", long ? {timeZone:TZ, day:"numeric", month:"long", year:"numeric"} : {timeZone:TZ, day:"numeric", month:"short"}).format(new Date(ts)); }catch(e){ return ""; } };
+const goStart=()=>{ state={screen:"start"}; render(); };
+const pidBtn=(pid, name, cls)=>pid ? `<button class="plink${cls?" "+cls:""}" type="button" data-pid="${esc(pid)}">${esc(name||"???")}</button>` : `<span class="${cls||""}">${esc(name||"???")}</span>`;
+function wirePidLinks(root){ (root||document).querySelectorAll("[data-pid]").forEach(b=>{ b.onclick=()=>openProfile(b.dataset.pid); }); }
+
+async function openProfile(pid){
+  if (!dailyAvailable()) return;
+  const tok=++profTok;
+  state={screen:"profload", pid:pid||null}; render();
+  await dchain;
+  let d=null, err=null;
+  try{ d=await rpc("get_profile", {p_pid:pid||null, p_player:local.playerId}); }catch(e){ err=e; }
+  if (tok!==profTok || state.screen!=="profload") return;
+  state={screen:"profile", pid:pid||null, data:d, err}; render();
+}
+function renderProfLoad(){ view.innerHTML=`<section class="card stack narrow"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Profil wird geladen …</span></div></section>`; }
+function renderProfile(){
+  const d=state.data;
+  if (!d){
+    view.innerHTML=`<section class="card stack narrow"><span class="label">Spielerprofil</span>
+      <h2>${state.err?"Das Profil konnte nicht geladen werden.":"Dieses Profil gibt es nicht."}</h2>
+      <p class="hint">${state.err?"Prüf deine Verbindung und versuch es nochmal.":"Prüf den Link."}</p>
+      <div class="row"><button class="btn ghost" id="menu3" type="button">Zum Start</button></div></section>`;
+    $("menu3").onclick=goStart; return;
+  }
+  const du=d.duels||{}, dy=d.daily||{};
+  const n=v=>Number(v)||0;
+  const played=n(du.played), wins=n(du.wins), losses=n(du.losses), draws=n(du.draws);
+  const rw=n(du.rounds_won), rl=n(du.rounds_lost);
+  const name=cleanTag(d.name) || (d.me ? cleanTag(lastTag) : "") || "???";
+  const tile=(v,l,hl)=>`<div class="ptile${hl?" hl":""}"><b>${v}</b><span>${l}</span></div>`;
+  const dash=v=>v==null ? "–" : n(v);
+  const res={win:"Sieg", loss:"Niederlage", draw:"Remis", open:"Offen"};
+  const hist=Array.isArray(d.history) ? d.history : [];
+  const histHTML = hist.length ? `<ol class="mhist">${hist.map(h=>{
+      const open=h.result==="open";
+      const sub = !open ? `${n(h.my_rounds)}:${n(h.opp_rounds)} Fragen · ${n(h.my_pts)}:${n(h.opp_pts)} Punkte`
+        : !h.opp_name ? "Wartet auf einen Gegner"
+        : h.my_status!=="done" ? "Du spielst noch" : `${esc(h.opp_name)} spielt noch`;
+      return `<li class="mrow r-${esc(h.result)}">
+        <span class="mres">${res[h.result]||""}</span>
+        <span class="mvs"><span>gegen ${h.opp_name ? pidBtn(h.opp_pid, h.opp_name) : `<span class="hint">noch niemand</span>`}</span><small>${sub}</small></span>
+        <span class="mdate">${fmtDay(h.t)}</span>
+        ${h.code?`<button class="btn ghost small mopen" type="button" data-code="${esc(h.code)}">Ansehen</button>`:""}
+      </li>`; }).join("")}</ol>`
+    : `<p class="hint">${d.me?"Noch keine Duelle – fordere jemanden heraus!":"Noch keine abgeschlossenen Duelle."}</p>`;
+  const rivals=Array.isArray(d.rivals) ? d.rivals : [];
+  const rivalsHTML = rivals.length ? `<ul class="rivals">${rivals.map(r=>`<li>${pidBtn(r.pid, cleanTag(r.name)||"???")}<span class="hint">${n(r.games)} ${n(r.games)===1?"Duell":"Duelle"}</span><b title="Siege : Niederlagen">${n(r.wins)}:${n(r.losses)}</b></li>`).join("")}</ul>`
+    : `<p class="hint">Noch keine Gegner.</p>`;
+  view.innerHTML=`<section class="card stack profile">
+    <div class="phead">
+      <div class="pavatar" aria-hidden="true">${esc(name)}</div>
+      <div class="stack" style="gap:4px;min-width:0">
+        <span class="label">Spielerprofil</span>
+        <h2><span class="tagname">${esc(name)}</span>${d.me?` <span class="you">Du</span>`:""}</h2>
+        <p class="hint">${d.since?`Dabei seit ${fmtDay(d.since, true)}`:"Noch nicht gespielt"}${d.me?" · gilt für dieses Gerät":""}</p>
+      </div>
+      <button class="btn ghost small" id="profShare" type="button">Profil teilen</button>
+    </div>
+    <p class="hint" id="profMsg" role="status"></p>
+    <div class="ptiles">
+      ${tile(played, played===1?"Duell":"Duelle")}
+      ${tile(wins, wins===1?"Sieg":"Siege")}
+      ${tile(played?pct(wins, played)+"%":"–", "Siegquote", true)}
+      ${tile(rw+rl?pct(rw, rw+rl)+"%":"–", "Fragen gewonnen")}
+      ${tile(dash(du.avg_pts), "Ø Punkte pro Duell")}
+      ${tile(n(du.needles)+n(dy.needles), "Nadeln gefunden")}
+    </div>
+    <div class="stack" style="gap:8px">
+      <div class="wlbar${played?"":" empty"}" role="img" aria-label="${wins} Siege, ${draws} Remis, ${losses} Niederlagen">
+        ${played?`<i class="w" style="flex:${wins}"></i><i class="d" style="flex:${draws}"></i><i class="l" style="flex:${losses}"></i>`:""}
+      </div>
+      <div class="wllegend"><span><i class="w"></i>${wins} ${wins===1?"Sieg":"Siege"}</span><span><i class="d"></i>${draws} Remis</span><span><i class="l"></i>${losses} ${losses===1?"Niederlage":"Niederlagen"}</span>${n(du.open)&&d.me?`<span>${n(du.open)} offen</span>`:""}</div>
+    </div>
+    <div class="pcols">
+      <div><h3>Match-Historie</h3>${histHTML}</div>
+      <div class="stack" style="gap:22px">
+        <div><h3>Tagesrätsel</h3><div class="ptiles small">
+          ${tile(n(dy.played), "gespielt")}${tile(dash(dy.avg), "Ø Punkte")}${tile(dash(dy.best), "Bestwert")}${tile(n(dy.wins), n(dy.wins)===1?"Tagessieg":"Tagessiege")}
+        </div></div>
+        <div><h3>Häufigste Gegner</h3>${rivalsHTML}</div>
+        ${d.me?`<div><h3>Freies Spiel <small class="hint">· auf diesem Gerät</small></h3><div class="ptiles small">
+          ${tile(stats.rounds, "Runden")}${tile(stats.best, "Bestwert")}${tile(stats.needles, "Nadeln")}
+        </div></div>`:""}
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="duNew2" type="button">Duell starten</button>
+      <button class="btn ghost small" id="menu3" type="button">Zum Start</button>
+    </div>
+  </section>`;
+  $("menu3").onclick=goStart;
+  $("duNew2").onclick=()=>{ state={screen:"duelnew"}; render(); };
+  view.querySelectorAll(".mopen").forEach(b=>{ b.onclick=()=>openDuel(b.dataset.code); });
+  wirePidLinks(view);
+  $("profShare").onclick=async()=>{
+    const url=profileLink(d.pid), text=`${name} bei Heuhaufen – Profil und Statistiken`;
+    if (navigator.share){ try{ await navigator.share({title:"Heuhaufen-Profil", text, url}); return; }catch(e){ if (e && e.name==="AbortError") return; } }
+    try{ await navigator.clipboard.writeText(url); $("profMsg").textContent="Link zum Profil kopiert."; }
+    catch(e){ $("profMsg").textContent=url; }
+  };
 }
 
 /* ======================= Zustand ======================= */
@@ -2878,6 +3042,8 @@ function render(){
   if (state.screen==="duelerr") return renderDuelErr();
   if (state.screen==="duelinvite") return renderDuelInvite();
   if (state.screen==="duel") return renderDuel();
+  if (state.screen==="profload") return renderProfLoad();
+  if (state.screen==="profile") return renderProfile();
 }
 
 /* ---------- Start ---------- */
@@ -3438,8 +3604,11 @@ $("home").onclick=ev=>{ ev.preventDefault(); if (state.screen!=="loading"){ stat
 /* ======================= Start ======================= */
 function start(data){
   const s=data && data.state;
+  const pb=$("profBtn"); if (pb && dailyAvailable()){ pb.hidden=false; pb.onclick=()=>openProfile(null); }
   const dq=duelParam();
   if (dq){ openDuel(dq); return; }
+  const pq=profileParam();
+  if (pq){ openProfile(pq); return; }
   if (s && s.screen==="board" && typeof s.key==="string"){
     if (dbReady){ openBoard(s.key); return; }
     pendingBoard=s.key; render(); return;

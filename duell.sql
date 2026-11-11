@@ -2,6 +2,12 @@
 -- Einmal komplett im Supabase "SQL Editor" einfügen und auf "Run" klicken.
 -- Das Skript kann gefahrlos mehrfach ausgeführt werden.
 
+-- Öffentliche Spieler-Kennung (aus der geheimen Geräte-Kennung abgeleitet, nicht zurückrechenbar).
+create or replace function public.hh_pid(p text)
+returns text
+language sql immutable
+as $$ select left(md5('heuhaufen:' || coalesce(p, '')), 12) $$;
+
 create table if not exists public.duels (
   code        text primary key check (code ~ '^[A-Z2-9]{5}$'),
   created_at  timestamptz not null default now(),
@@ -199,12 +205,12 @@ begin
     'role', v_role,
     'final', v_fin,
     'a', json_build_object(
-      'name', d.a_name, 'status', d.a_status, 'n', coalesce(array_length(d.a_tiers, 1), 0),
+      'name', d.a_name, 'pid', public.hh_pid(d.a_player), 'status', d.a_status, 'n', coalesce(array_length(d.a_tiers, 1), 0),
       'tiers',   case when v_fin or v_role = 'a' then to_json(d.a_tiers) end,
       'answers', case when v_fin or v_role = 'a' then to_json(d.a_answers) end,
       'score',   case when v_fin or v_role = 'a' then d.a_score end),
     'b', case when d.b_name is null then null else json_build_object(
-      'name', d.b_name, 'status', d.b_status, 'n', coalesce(array_length(d.b_tiers, 1), 0),
+      'name', d.b_name, 'pid', public.hh_pid(d.b_player), 'status', d.b_status, 'n', coalesce(array_length(d.b_tiers, 1), 0),
       'tiers',   case when v_fin or v_role = 'b' then to_json(d.b_tiers) end,
       'answers', case when v_fin or v_role = 'b' then to_json(d.b_answers) end,
       'score',   case when v_fin or v_role = 'b' then d.b_score end) end
@@ -212,6 +218,7 @@ begin
 end;
 $$;
 
+revoke all on function public.hh_pid(text) from public, anon, authenticated;
 revoke all on function public.create_duel(text, text, text[]) from public;
 revoke all on function public.join_duel(text, text, text) from public;
 revoke all on function public.save_duel(text, uuid, smallint[], text[], boolean) from public;
