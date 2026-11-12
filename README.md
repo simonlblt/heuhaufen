@@ -51,6 +51,7 @@ Nach einem Update der Seite, das neue Funktionen bringt, einfach dieses Skript n
 - **Name ändern:** Im eigenen Profil, höchstens einmal pro Woche. Der neue Name gilt überall (auch in alten Bestenlisten und Duellen) und ist danach der Name für die Anmeldung.
 - **Level und Rangliste:** Jede Runde bringt XP. Tagesrätsel und Duell zählen mit vollen Punkten, Classic mit den halben. Dazu gibt es 100 XP je Duellsieg und 150 XP je Tagessieg (sobald der Tag vorbei ist). Level 2 gibt es ab 200 XP, Level 3 ab 500, Level 5 ab 1.400, Level 10 ab 5.400.
 - **Token und Shop:** Token verdient man beim Spielen: 1 Token je 10 Punkte in Tagesrätsel und Duell, 1 Token je 20 Punkte in Classic, 10 je Duellsieg. Wer am Tagesende in der Tagesrätsel-Bestenliste steht, bekommt einen kleinen Bonus (Platz 1: 25, Platz 2: 15, Platz 3: 10, alle anderen: 5). Im Shop gibt es dafür bunte Namen und Glücksbringer, die links und rechts neben dem Spiel stehen. Alles ist rein kosmetisch.
+- **Wer ist online:** Oben neben dem Schriftzug steht, wie viele Spieler die Seite gerade offen haben (Gäste zählen mit, mehrere Tabs auf einem Gerät zählen einmal).
 - **Ton und Design:** Oben rechts lassen sich die Töne ausschalten und das helle oder dunkle Design wählen.
 
 ## Gut zu wissen
@@ -61,5 +62,6 @@ Nach einem Update der Seite, das neue Funktionen bringt, einfach dieses Skript n
 - **Namen:** kommen immer aus dem Profil, niemand kann sich als jemand anderes eintragen. Es gibt keinen Wortfilter. Einträge löschen kannst du im Supabase-Dashboard unter **Table Editor → scores**, **duels** bzw. **accounts**.
 - **Passwort vergessen:** Es gibt keine E-Mail-Wiederherstellung. Im SQL Editor kannst du ein neues Passwort setzen: `update accounts set pw_hash = extensions.crypt('NEUES-PASSWORT', extensions.gen_salt('bf', 8)) where name_key = lower('NAME');`
 - **Preise im Shop:** stehen in `setup.sql` (Teil 7, Tabelle `shop_items`). Dort ändern und das Skript neu laufen lassen – die Seite zeigt immer die Preise aus der Datenbank. Token verschenken geht im SQL Editor, indem du die ausgegebenen Token verringerst: `update accounts set spent = spent - 500 where name_key = lower('NAME');`
+- **Online-Anzeige:** läuft über Supabase Realtime und braucht kein Datenbank-Skript. Übertragen wird nur ein zufälliger Geräte-Schlüssel, kein Name. Wer die Seite länger als eine Minute im Hintergrund hat, zählt nicht mehr mit. Im Gratis-Tarif erlaubt Supabase derzeit 200 gleichzeitige Verbindungen und 2 Millionen Realtime-Nachrichten im Monat; ist der Dienst nicht erreichbar, verschwindet nur die Anzeige.
 - **Supabase-Gratisprojekte** werden nach längerer Zeit ohne Nutzung pausiert. Dann im Dashboard auf **Restore** klicken.
 - **Ohne Supabase** (leere `config.js`) läuft Classic trotzdem – nur ohne Tagesrätsel, Duelle und Profile.

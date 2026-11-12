@@ -806,6 +806,21 @@ textarea.share{background:var(--surface-2)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .sidecharm svg, :root:not([data-theme="light"]) .footcharm svg, :root:not([data-theme="light"]) .sprev.ch svg{filter:drop-shadow(0 0 1.3px rgba(255,240,192,.85))} }
 :root[data-theme="dark"] .sidecharm svg, :root[data-theme="dark"] .footcharm svg, :root[data-theme="dark"] .sprev.ch svg{filter:drop-shadow(0 0 1.3px rgba(255,240,192,.85))}
 @media (max-width:480px){ .shopgrid,.shopgrid.charms{grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px} .sprev.ch,.sprev.ch svg{height:92px} .nmprev{font-size:19px} .profbtn .pblvl{display:none} .tokbtn{padding:3px 9px 3px 4px; font-size:13px; min-height:36px} .tokbtn .coin{width:22px; height:22px} }
+/* Kopfzeile: wie viele Spieler gerade online sind */
+.brandbox{display:flex; flex-direction:column; align-items:flex-start; min-width:0}
+.onpill{display:inline-flex; align-items:center; gap:6px; margin:-4px 0 0 44px; font-size:11.5px; font-weight:700; line-height:1.3; letter-spacing:.01em; color:var(--muted); white-space:nowrap}
+.onpill b{color:var(--ink); font-variant-numeric:tabular-nums}
+.onpill.bump b{animation:onbump .45s cubic-bezier(.2,1.5,.4,1)}
+.ondot{position:relative; width:8px; height:8px; border-radius:50%; background:var(--ok); flex:none}
+.ondot::after{content:""; position:absolute; inset:-3px; border-radius:50%; border:2px solid var(--ok); opacity:0; animation:onpulse 2.4s ease-out infinite}
+@keyframes onpulse{0%{transform:scale(.45); opacity:.85} 70%,100%{transform:scale(1.5); opacity:0}}
+@keyframes onbump{0%{transform:scale(1)} 40%{transform:scale(1.35)} 100%{transform:scale(1)}}
+@media (max-width:480px){ .brand b{font-size:22px} .brand svg{width:28px; height:28px} .topright{gap:6px} .onpill{margin-left:38px} }
+@media (max-width:380px){ header.top{gap:8px} .brand{gap:8px} .brand b{font-size:20px} .brand svg{width:26px; height:26px} .onpill{margin-left:34px; font-size:11px} }
+@media (min-width:960px){
+  .brandbox{flex-direction:row; align-items:center; gap:16px}
+  .onpill{margin:0; padding:6px 13px 6px 11px; gap:8px; border:2px solid var(--line); border-radius:999px; background:var(--surface); font-size:13px}
+}
 @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} .duelcard.anim .drow{opacity:1} }
 </style>
 </head>
@@ -817,7 +832,7 @@ const MAIN_EL=document.currentScript||document.getElementById("mainScript");
 const MAIN_SRC=MAIN_EL?MAIN_EL.textContent:"";
 document.getElementById("appRoot").insertAdjacentHTML("afterbegin", `<div class="app">
   <header class="top">
-    <a class="brand" href="#" id="home" aria-label="Heuhaufen – zum Start">
+    <div class="brandbox"><a class="brand" href="#" id="home" aria-label="Heuhaufen – zum Start">
       <svg viewBox="0 0 40 40" aria-hidden="true">
         <path d="M4 34 C 8 18, 14 12, 20 11 C 26 12, 32 18, 36 34 Z" fill="var(--t0)" stroke="var(--ink)" stroke-width="2.2" stroke-linejoin="round"/>
         <path d="M10 30 l4 -9 M16 31 l2 -12 M22 31 l1 -13 M27 31 l-1 -10 M31 31 l-3 -8" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
@@ -825,7 +840,7 @@ document.getElementById("appRoot").insertAdjacentHTML("afterbegin", `<div class=
         <ellipse cx="9.5" cy="7.5" rx="2.6" ry="1.4" transform="rotate(44 9.5 7.5)" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
       </svg>
       <b>Heuhaufen</b>
-    </a>
+    </a><span class="onpill" id="onPill" role="status" hidden><i class="ondot" aria-hidden="true"></i><span><b id="onNum">1</b> Spieler online</span></span></div>
     <div class="topright"><div class="best" id="bestTop"></div><button class="iconbtn" id="soundBtn" type="button" aria-label="Ton an oder aus"></button><button class="iconbtn themebtn" id="themeBtn" type="button" aria-label="Helles oder dunkles Design"></button><button class="tokbtn" id="tokBtn" type="button" hidden></button><button class="profbtn" id="profBtn" type="button" hidden></button></div>
   </header>
   <main id="view" class="stack"></main>
@@ -3452,7 +3467,7 @@ function updateHeader(){
   if (tk){
     const t=myTokens();
     tk.hidden = !(dailyAvailable() && account() && t!=null);
-    if (!tk.hidden){ tk.innerHTML=`${I_COIN}<b>${fmtNum(t)}</b>`; tk.title="Deine Token – zum Shop"; tk.setAttribute("aria-label", `${t} Token – zum Shop`); tk.onclick=()=>openShop(); }
+    if (!tk.hidden){ tk.innerHTML=`${I_COIN}<b>${fmtTokTop(t)}</b>`; tk.title=`${fmtNum(t)} Token – zum Shop`; tk.setAttribute("aria-label", `${t} Token – zum Shop`); tk.onclick=()=>openShop(); }
   }
   if (!pb) return;
   if (!dailyAvailable()){ pb.hidden=true; return; }
@@ -3684,6 +3699,10 @@ function levelOf(xp){
 const TITLES=[[1,"Heuwender"],[3,"Strohsammler"],[5,"Mäusefänger"],[8,"Glückspilz"],[12,"Nadelsucher"],[16,"Nadelfinder"],[20,"Heuhaufen-Legende"]];
 const titleOf=L=>TITLES.reduce((t,[n,s])=>L>=n?s:t, TITLES[0][1]);
 const fmtNum=v=>{ try{ return new Intl.NumberFormat("de-DE").format(Number(v)||0); }catch(e){ return String(Number(v)||0); } };
+/* Kopfzeile auf dem Handy: ab einer Million abgekürzt (abgerundet), damit die Knöpfe in einer Zeile bleiben */
+const NARROW=(()=>{ try{ return matchMedia("(max-width:480px)"); }catch(e){ return null; } })();
+const fmtTokTop=v=>{ const n=Number(v)||0; if (!(NARROW && NARROW.matches) || n<1e6) return fmtNum(n); return fmtNum(n>=1e8 ? Math.floor(n/1e6) : Math.floor(n/1e5)/10)+" Mio"; };
+try{ if (NARROW){ const f=()=>{ try{ updateHeader(); }catch(e){} }; if (NARROW.addEventListener) NARROW.addEventListener("change", f); else if (NARROW.addListener) NARROW.addListener(f); } }catch(e){}
 
 /* ======================= Profilbilder ======================= */
 const AV_COLORS=["#F7C948","#FF8A3D","#EF5350","#E667A8","#9B6BF2","#5B6BF5","#2BB8D6","#12A090","#7BC043","#A1785A"];
@@ -4369,6 +4388,121 @@ async function shopEquip(slot, id){
   s.data=r; s.msg=""; sfx("tap"); render();
 }
 
+/* ======================= Wer ist gerade online =======================
+   Läuft über Supabase Realtime (Presence): jede offene Seite meldet sich in einem gemeinsamen Kanal an,
+   gezählt werden die angemeldeten Geräte. Dafür ist kein Datenbank-Skript nötig. Übertragen wird nur
+   ein zufälliger Geräte-Schlüssel – kein Name und nicht die geheime Spieler-ID.
+   Ist die Seite länger als eine Minute im Hintergrund, meldet sie sich ab und beim Zurückkommen wieder an. */
+const ON_TOPIC="realtime:heuhaufen-online", ON_BEAT=25000, ON_IDLE=60000;
+const onl={ws:null, ref:0, joinRef:null, beat:null, beatRef:null, watch:null, retry:null, gone:null, idle:null, probe:null, tries:0, synced:false, pending:[], map:new Map(), n:null, key:null, wired:false};
+function onlineKey(){
+  if (onl.key) return onl.key;
+  let k=null;
+  try{ k=localStorage.getItem("heuhaufen:oid"); }catch(e){}
+  if (!/^[0-9a-f]{16}$/.test(k||"")){
+    try{ const a=new Uint8Array(8); crypto.getRandomValues(a); k=[...a].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+    catch(e){ k=(Math.random().toString(16).slice(2)+Math.random().toString(16).slice(2)+"0000000000000000").slice(0,16); }
+    try{ localStorage.setItem("heuhaufen:oid", k); }catch(e){}
+  }
+  return onl.key=k;
+}
+function onlinePaint(){
+  const el=$("onPill"), num=$("onNum"); if (!el || !num) return;
+  if (onl.n==null){ el.hidden=true; return; }
+  const txt=fmtNum(onl.n), changed=!el.hidden && num.textContent!==txt;
+  num.textContent=txt; el.hidden=false;
+  el.title=onl.n===1 ? "Gerade ist 1 Spieler online – das bist du" : `Gerade sind ${txt} Spieler online`;
+  if (changed){ el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+}
+function onlineCount(){ const s=new Set(onl.map.keys()); s.add(onlineKey()); onl.n=s.size; clearTimeout(onl.gone); onl.gone=null; onlinePaint(); }
+function onlineDiff(d){
+  const j=(d && d.joins)||{}, l=(d && d.leaves)||{};
+  for (const k of Object.keys(j)){ let s=onl.map.get(k); if (!s){ s=new Set(); onl.map.set(k,s); } for (const m of ((j[k] && j[k].metas)||[])) s.add(m.phx_ref); if (!s.size) onl.map.delete(k); }
+  for (const k of Object.keys(l)){ const s=onl.map.get(k); if (!s) continue; for (const m of ((l[k] && l[k].metas)||[])) s.delete(m.phx_ref); if (!s.size) onl.map.delete(k); }
+}
+function onlineState(st){
+  onl.map.clear();
+  for (const k of Object.keys(st||{})){ const s=new Set(((st[k] && st[k].metas)||[]).map(m=>m.phx_ref)); if (s.size) onl.map.set(k,s); }
+  const p=onl.pending; onl.pending=[]; onl.synced=true; p.forEach(onlineDiff);   // Änderungen, die vor der Liste kamen, nachholen
+}
+function onlineSend(topic, event, payload){
+  const w=onl.ws; if (!w || w.readyState!==1) return null;
+  const ref=String(++onl.ref), m={topic, event, payload, ref};
+  if (topic===ON_TOPIC) m.join_ref=onl.joinRef;
+  try{ w.send(JSON.stringify(m)); }catch(e){ return null; }
+  return ref;
+}
+function onlineStop(){
+  const w=onl.ws; onl.ws=null; onl.synced=false; onl.pending=[]; onl.beatRef=null;
+  clearInterval(onl.beat); onl.beat=null; clearTimeout(onl.watch); onl.watch=null; clearTimeout(onl.probe); onl.probe=null;
+  if (w){ w.onopen=w.onmessage=w.onclose=w.onerror=null; try{ w.close(); }catch(e){} }
+}
+function onlineRetry(){
+  clearTimeout(onl.retry); onl.retry=null;
+  if (!onl.gone) onl.gone=setTimeout(()=>{ onl.gone=null; if (!(onl.ws && onl.synced)){ onl.n=null; onlinePaint(); } }, 8000);   // kurze Aussetzer nicht anzeigen
+  if (document.visibilityState==="hidden") return;      // geht weiter, sobald die Seite wieder zu sehen ist
+  const wait=onl.tries>=8 ? 300000 : Math.min(60000, 2000*Math.pow(2, onl.tries));
+  onl.tries++;
+  onl.retry=setTimeout(onlineConnect, Math.round(wait*(0.75+Math.random()*0.5)));
+}
+function onlineDrop(){ onlineStop(); onlineRetry(); }
+function onlineMsg(m){
+  if (!m || typeof m!=="object") return;
+  if (m.topic==="phoenix"){ if (m.event==="phx_reply" && m.ref===onl.beatRef) onl.beatRef=null; return; }
+  if (m.topic!==ON_TOPIC) return;
+  const p=m.payload||{};
+  if (m.event==="phx_reply" && m.ref===onl.joinRef){
+    if (p.status==="ok") onlineSend(ON_TOPIC, "presence", {type:"presence", event:"track", payload:{}});
+    else onlineDrop();
+  }
+  else if (m.event==="presence_state"){ onlineState(p); onl.tries=0; clearTimeout(onl.watch); onl.watch=null; onlineCount(); }
+  else if (m.event==="presence_diff"){ if (onl.synced){ onlineDiff(p); onlineCount(); } else onl.pending.push(p); }
+  else if (m.event==="phx_error" || m.event==="phx_close" || (m.event==="system" && p.status==="error")) onlineDrop();
+}
+function onlineConnect(){
+  clearTimeout(onl.retry); onl.retry=null;
+  if (onl.ws || !dailyAvailable() || typeof WebSocket!=="function") return;
+  if (document.visibilityState==="hidden") return;
+  let w;
+  try{ w=new WebSocket(SB_URL.replace(/^http/,"ws")+"/realtime/v1/websocket?apikey="+encodeURIComponent(SB_KEY)+"&vsn=1.0.0"); }
+  catch(e){ onlineRetry(); return; }
+  onl.ws=w; onl.synced=false; onl.pending=[]; onl.beatRef=null;
+  onl.watch=setTimeout(()=>{ if (onl.ws===w && !onl.synced) onlineDrop(); }, 15000);      // keine Antwort: neu versuchen
+  w.onopen=()=>{
+    if (onl.ws!==w) return;
+    onl.joinRef=String(++onl.ref);
+    try{ w.send(JSON.stringify({topic:ON_TOPIC, event:"phx_join", payload:{config:{broadcast:{ack:false, self:false}, presence:{key:onlineKey()}, postgres_changes:[], private:false}}, ref:onl.joinRef, join_ref:onl.joinRef})); }
+    catch(e){ onlineDrop(); return; }
+    onl.beat=setInterval(()=>{ if (onl.beatRef){ onlineDrop(); return; } onl.beatRef=onlineSend("phoenix", "heartbeat", {}); }, ON_BEAT);
+  };
+  w.onmessage=ev=>{ if (onl.ws!==w) return; let m=null; try{ m=JSON.parse(ev.data); }catch(e){ return; } onlineMsg(m); };
+  w.onclose=()=>{ if (onl.ws===w) onlineDrop(); };
+  w.onerror=()=>{};
+}
+function onlineWake(){
+  clearTimeout(onl.idle); onl.idle=null;
+  if (document.visibilityState==="hidden"){
+    onl.idle=setTimeout(()=>{ onl.idle=null; onlineStop(); clearTimeout(onl.retry); onl.retry=null; }, ON_IDLE);
+    return;
+  }
+  if (!onl.ws){ onl.tries=0; onlineConnect(); return; }
+  if (onl.ws.readyState>1){ onl.tries=0; onlineStop(); onlineConnect(); return; }
+  if (onl.ws.readyState===1 && !onl.beatRef){          // war die Seite weg: prüfen, ob die Verbindung noch lebt
+    const w=onl.ws, ref=onl.beatRef=onlineSend("phoenix", "heartbeat", {});
+    clearTimeout(onl.probe);
+    onl.probe=setTimeout(()=>{ onl.probe=null; if (onl.ws===w && ref && onl.beatRef===ref){ onl.tries=0; onlineStop(); onlineConnect(); } }, 5000);
+  }
+}
+function onlineStart(){
+  if (onl.wired || !dailyAvailable() || typeof WebSocket!=="function") return;
+  onl.wired=true;
+  document.addEventListener("visibilitychange", onlineWake);
+  addEventListener("pagehide", ()=>{ clearTimeout(onl.idle); onl.idle=null; clearTimeout(onl.retry); onl.retry=null; onlineStop(); });
+  addEventListener("pageshow", ev=>{ if (ev.persisted) onlineWake(); });
+  addEventListener("online", ()=>{ if (!onl.ws && document.visibilityState!=="hidden"){ onl.tries=0; onlineConnect(); } });
+  onlineConnect();
+}
+
 /* ======================= Zustand ======================= */
 let state={screen:"start"};
 let timerId=null, deadline=0, revealAt=0, digTok=null;
@@ -5043,6 +5177,7 @@ function start(data){
   const s=data && data.state;
   paintThemeColor();
   updateHeader();
+  onlineStart();
   if (account()) refreshMe(true);
   const dq=duelParam();
   if (dq){ openDuel(dq); return; }
