@@ -3323,7 +3323,8 @@ function renderProfile(){
           :`<p class="hint">${d.since?`Dabei seit ${fmtDay(d.since, true)}`:"Noch nicht gespielt"}</p>`}
       </div>
       <div class="pacts">
-        ${mine?`<button class="btn small" id="pAvBtn" type="button">Profilbild ändern</button>`:""}
+        ${mine?`<button class="btn small" id="pAvBtn" type="button">Profilbild ändern</button>
+        <button class="btn ghost small" id="pName" type="button">Name ändern</button>`:""}
         <button class="btn ghost small" id="profShare" type="button">Profil teilen</button>
       </div>
     </div>
@@ -3369,6 +3370,7 @@ function renderProfile(){
   $("rankGo3").onclick=openRanking;
   if ($("pAv")) $("pAv").onclick=openAvatarEditor;
   if ($("pAvBtn")) $("pAvBtn").onclick=openAvatarEditor;
+  if ($("pName")) $("pName").onclick=()=>openNameEditor(d.rename_next);
   if ($("profReg")) $("profReg").onclick=()=>openAuth({to:"profile"}, "register");
   if ($("logoutBtn")) $("logoutBtn").onclick=()=>{ if (confirm("Abmelden? Du kannst dich jederzeit wieder mit Name und Passwort anmelden.")) logout(); };
   if ($("duNew2")) $("duNew2").onclick=()=>{ state={screen:"duelnew"}; render(); };
@@ -3821,7 +3823,7 @@ async function peekRanking(){
 /* ======================= Profilbild aussuchen ======================= */
 let modalKey=null;
 function closeModal(){
-  const m=$("avModal"); if (m) m.remove();
+  document.querySelectorAll(".modal").forEach(m=>m.remove());
   if (modalKey){ document.removeEventListener("keydown", modalKey); modalKey=null; }
 }
 function openAvatarEditor(){
@@ -3958,6 +3960,77 @@ function openAvatarEditor(){
   paint();
   try{ q("avClose").focus({preventScroll:true}); }catch(e){}
   if (st.photo) useImage(st.photo).then(img=>{ if (!st.img && $("avModal")===wrap){ st.img=img; redraw(); } }, ()=>{});
+}
+
+/* ======================= Namen ändern (einmal pro Woche) ======================= */
+const fmtWhen=ts=>{ try{ return new Intl.DateTimeFormat("de-DE", {timeZone:TZ, weekday:"long", day:"numeric", month:"long", hour:"2-digit", minute:"2-digit"}).format(new Date(ts))+" Uhr"; }catch(e){ return ""; } };
+function openNameEditor(next){
+  if (!dailyAvailable() || !account()) return;
+  closeModal();
+  const cur=account().name;
+  const wait=Number(next)>Date.now() ? Number(next) : 0;
+  const wrap=document.createElement("div");
+  wrap.className="modal"; wrap.id="nmModal"; wrap.setAttribute("role","dialog"); wrap.setAttribute("aria-modal","true"); wrap.setAttribute("aria-label","Name ändern");
+  wrap.innerHTML=`<div class="mcard">
+    <div class="mhead"><h2>Name ändern</h2><button class="iconbtn" id="nmClose" type="button" aria-label="Schließen">${I_X}</button></div>
+    ${wait ? noteHTML(I_CLOCK, `Du hast deinen Namen vor Kurzem geändert. Das geht <b>einmal pro Woche</b> – wieder ab <b>${esc(fmtWhen(wait))}</b>.`)
+      : `<form class="authform" id="nmForm" novalidate>
+        <label for="nmIn">Neuer Name</label>
+        <input id="nmIn" maxlength="10" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" value="${esc(cur)}">
+        <span class="hint">2–10 Zeichen: Buchstaben, Zahlen, _ . oder -</span>
+        <p class="fb bad" id="nmErr" role="alert" style="min-height:0"></p>
+        <div class="row"><button class="btn" id="nmGo" type="submit">Namen ändern</button></div>
+      </form>
+      <p class="hint">Das geht <b>einmal pro Woche</b>. Der neue Name gilt überall – auch in alten Bestenlisten und Duellen. Danach meldest du dich mit dem neuen Namen an, dein Passwort bleibt gleich.</p>`}
+  </div>`;
+  document.body.appendChild(wrap);
+  const q=id=>wrap.querySelector("#"+id);
+  q("nmClose").onclick=closeModal;
+  wrap.onclick=ev=>{ if (ev.target===wrap) closeModal(); };
+  modalKey=ev=>{ if (ev.key==="Escape") closeModal(); };
+  document.addEventListener("keydown", modalKey);
+  if (wait){ try{ q("nmClose").focus({preventScroll:true}); }catch(e){} return; }
+  const inp=q("nmIn"), err=q("nmErr"), btn=q("nmGo");
+  inp.oninput=()=>{ const c=cleanName(inp.value); if (c!==inp.value) inp.value=c; };
+  try{ inp.focus({preventScroll:true}); inp.select(); }catch(e){}
+  q("nmForm").onsubmit=async ev=>{
+    ev.preventDefault();
+    if (btn.disabled) return;
+    const name=cleanName(inp.value);
+    if (!NAME_RE.test(name)){ err.textContent=AUTH_ERR.bad_name; return; }
+    if (name===cur){ err.textContent="Das ist schon dein Name."; return; }
+    btn.disabled=true; err.textContent="";
+    const player=local.playerId;
+    let r=null;
+    try{ r=await rpc("change_name", {p_player:player, p_name:name}); }
+    catch(e){
+      btn.disabled=false;
+      const code=e && e.code;
+      err.textContent = code==="name_taken" ? "Diesen Namen gibt es schon. Nimm einen anderen."
+        : code==="bad_name" ? AUTH_ERR.bad_name
+        : code==="same_name" ? "Das ist schon dein Name."
+        : code==="need_account" ? "Bitte melde dich nochmal an."
+        : code==="network" ? AUTH_ERR.network
+        : e && e.status===404 ? "Namen ändern ist noch nicht eingerichtet: In Supabase muss einmal das Skript setup.sql laufen."
+        : "Das hat nicht geklappt. Versuch es nochmal.";
+      return;
+    }
+    if (!r || !r.ok){
+      btn.disabled=false;
+      err.textContent = r && r.error==="too_soon" ? `Du kannst deinen Namen erst wieder ab ${fmtWhen(r.next)} ändern.` : "Das hat nicht geklappt. Versuch es nochmal.";
+      return;
+    }
+    if (!account() || local.playerId!==player){ closeModal(); return; }
+    const neu=cleanName(r.name)||name;
+    local.account.name=neu;
+    Object.values(local.days).forEach(e=>{ if (e && e.name) e.name=neu; });
+    saveLocal();
+    if (me) me.name=neu;
+    closeModal(); updateHeader();
+    toast(`Du heißt jetzt <b>${esc(neu)}</b>.`, I_CHECK); sfx("point");
+    if (state.screen==="profile") openProfile(state.pid||null);
+    else if (state.screen==="start") render();
+  };
 }
 
 /* ======================= Zustand ======================= */

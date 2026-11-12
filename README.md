@@ -48,6 +48,7 @@ Nach einem Update der Seite, das neue Funktionen bringt, einfach dieses Skript n
 - **Tagesrätsel:** 5 Fragen, für alle dieselben, ein Versuch pro Profil und Tag, mit Bestenliste.
 - **Duell (1 gegen 1):** Du spielst 5 Fragen und schickst einen Link weiter. Pro Frage gewinnt die seltenere Antwort, gleiche Antworten zählen für keinen.
 - **Profile:** Name (2–10 Zeichen) und Passwort, Anmeldung auf jedem Gerät. Mit Profilbild (Symbol oder eigenes Foto), Statistiken, Match-Historie, Abzeichen und Link zum Teilen (`?spieler=…`).
+- **Name ändern:** Im eigenen Profil, höchstens einmal pro Woche. Der neue Name gilt überall (auch in alten Bestenlisten und Duellen) und ist danach der Name für die Anmeldung.
 - **Level und Rangliste:** Jede Runde bringt XP. Tagesrätsel und Duell zählen mit vollen Punkten, Classic mit den halben. Dazu gibt es 100 XP je Duellsieg und 150 XP je Tagessieg (sobald der Tag vorbei ist). Level 2 gibt es ab 200 XP, Level 3 ab 500, Level 5 ab 1.400, Level 10 ab 5.400.
 - **Ton und Design:** Oben rechts lassen sich die Töne ausschalten und das helle oder dunkle Design wählen.
 

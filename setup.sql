@@ -1038,6 +1038,8 @@ alter table public.accounts add column if not exists free_needles integer not nu
 alter table public.accounts add column if not exists free_at      timestamptz;
 alter table public.accounts add column if not exists free_day     date;
 alter table public.accounts add column if not exists free_today   integer not null default 0;
+-- Zeitpunkt der letzten Namensänderung (siehe Teil 6).
+alter table public.accounts add column if not exists name_changed_at timestamptz;
 
 create or replace function public.add_free(p_player text, p_tiers smallint[])
 returns json
@@ -1209,6 +1211,9 @@ begin
     'pid', public.hh_pid(v_player),
     'me', v_me,
     'account', exists (select 1 from public.accounts k where k.player_id = v_player),
+    'rename_next', case when v_me then (select (extract(epoch from k.name_changed_at + interval '7 days') * 1000)::bigint
+                       from public.accounts k
+                      where k.player_id = v_player and k.name_changed_at > now() - interval '7 days') end,
     'avatar', (select k.avatar from public.accounts k where k.player_id = v_player),
     'xp', public.hh_xp(v_player),
     'free', (select json_build_object('rounds', k.free_rounds, 'best', k.free_best, 'needles', k.free_needles)
@@ -1289,6 +1294,58 @@ grant execute on function public.get_avatars(text[]) to anon, authenticated;
 grant execute on function public.get_ranking(text) to anon, authenticated;
 grant execute on function public.get_profile(text, text) to anon, authenticated;
 
+
+-- ============================================================
+-- Teil 6 · Namen ändern (einmal pro Woche)
+-- ============================================================
+
+-- Name ändern: höchstens einmal in 7 Tagen. Der neue Name gilt überall – auch in alten
+-- Bestenlisten und Duellen – und ist danach der Name für die Anmeldung. Das Passwort bleibt.
+create or replace function public.change_name(p_player text, p_name text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  k public.accounts;
+begin
+  if p_player is null or char_length(p_player) not between 8 and 64 then
+    raise exception 'bad_player';
+  end if;
+  if p_name is null or p_name !~ '^[A-Za-z0-9ÄÖÜäöüß_.-]{2,10}$' then
+    raise exception 'bad_name';
+  end if;
+  select * into k from public.accounts x where x.player_id = p_player for update;
+  if not found then
+    raise exception 'need_account';
+  end if;
+  if k.name = p_name then
+    raise exception 'same_name';
+  end if;
+  if k.name_changed_at is not null and k.name_changed_at > now() - interval '7 days' then
+    return json_build_object('ok', false, 'error', 'too_soon',
+      'next', (extract(epoch from k.name_changed_at + interval '7 days') * 1000)::bigint);
+  end if;
+  if lower(p_name) <> k.name_key
+     and exists (select 1 from public.accounts x where x.name_key = lower(p_name)) then
+    raise exception 'name_taken';
+  end if;
+  begin
+    update public.accounts x
+       set name_key = lower(p_name), name = p_name, name_changed_at = now()
+     where x.player_id = p_player;
+  exception when unique_violation then
+    raise exception 'name_taken';
+  end;
+  update public.scores s set name = p_name where s.player_id = p_player and s.name is not null;
+  update public.duels d set a_name = p_name where d.a_player = p_player;
+  update public.duels d set b_name = p_name where d.b_player = p_player;
+  return json_build_object('ok', true, 'name', p_name,
+    'next', (extract(epoch from now() + interval '7 days') * 1000)::bigint);
+end;
+$$;
+
+revoke all on function public.change_name(text, text) from public;
+grant execute on function public.change_name(text, text) to anon, authenticated;
 
 -- Supabase die neuen Funktionen sofort bekannt machen.
 notify pgrst, 'reload schema';
