@@ -809,8 +809,9 @@ textarea.share{background:var(--surface-2)}
 /* Live-Duell: Raum-Code, Kopf mit beiden Spielern, Doppel-Schacht */
 .livecard{gap:18px}
 .roomcode{display:flex; gap:10px; justify-content:center; padding:4px 0}
-.roomcode span{width:64px; height:82px; display:grid; place-items:center; border:2px solid var(--ink); border-radius:16px; background:var(--surface-2); font-family:var(--font-mono); font-weight:700; font-size:46px; line-height:1; box-shadow:4px 4px 0 var(--shade); animation:rise .4s both}
-.roomcode span:nth-child(2){animation-delay:.06s} .roomcode span:nth-child(3){animation-delay:.12s} .roomcode span:nth-child(4){animation-delay:.18s}
+.roomcode span{width:64px; height:82px; display:grid; place-items:center; border:2px solid var(--ink); border-radius:16px; background:var(--surface-2); font-family:var(--font-mono); font-weight:700; font-size:46px; line-height:1; box-shadow:4px 4px 0 var(--shade)}
+.roomcode.anim span{animation:rise .4s both}
+.roomcode.anim span:nth-child(2){animation-delay:.06s} .roomcode.anim span:nth-child(3){animation-delay:.12s} .roomcode.anim span:nth-child(4){animation-delay:.18s}
 .lvchoice{display:grid; gap:12px}
 .lvopt{display:flex; flex-direction:column; gap:10px; align-items:flex-start; padding:16px; border:2px solid var(--ink); border-radius:16px; background:var(--surface-2); min-width:0}
 .lvor{align-self:center; justify-self:center; font-weight:700; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
@@ -897,6 +898,117 @@ textarea.share{background:var(--surface-2)}
   .lvdig .band .bn{font-size:17px}
   .lvbar{padding:12px 18px}
   .lvnm .tagname{font-size:19px}
+}
+/* Lobbys: Erstellen, Liste, Spieler, Kicken */
+.lbtop{display:grid; gap:14px; align-items:center}
+@media (min-width:700px){ .lbtop{grid-template-columns:auto minmax(0,1fr)} }
+.lbplayers,.lblist{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+.lbp,.lbrow{display:flex; align-items:center; gap:10px; padding:8px 12px; border:2px solid var(--ink); border-radius:14px; background:var(--surface-2); min-width:0}
+.lbp.free{border-style:dashed; border-color:var(--muted); background:transparent}
+.lbp.me{box-shadow:3px 3px 0 var(--shade)}
+.lbp.away .av{opacity:.45}
+.lbn{display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-width:0; flex:1}
+.lbn .tagname{font-size:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; max-width:100%}
+.lbrow .lbn{flex-direction:column; align-items:flex-start; gap:0; flex-wrap:nowrap}
+.lbrow small{font-size:12px; color:var(--muted)}
+.lbhost{font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:linear-gradient(135deg, var(--gold), var(--hot)); color:#1D1705; white-space:nowrap}
+.lbn .you{background:var(--ink); color:var(--surface)}
+.lbst{font-size:12px; color:var(--muted); white-space:nowrap}
+.lbkick.warn{border-color:var(--warn); color:var(--warn)}
+.lbempty{padding:14px; border:2px dashed var(--line); border-radius:14px; margin:0}
+.seg{display:inline-flex; border:2px solid var(--ink); border-radius:999px; overflow:hidden; background:var(--surface)}
+.segb{padding:7px 16px; font-weight:700; font-size:14px; background:transparent; color:var(--ink); border:0}
+.segb.on{background:var(--ink); color:var(--surface)}
+.stepper{display:inline-flex; align-items:center; gap:10px}
+.stepper button{width:38px; height:38px; border-radius:50%; border:2px solid var(--ink); background:var(--surface); color:var(--ink); font-weight:800; font-size:20px; line-height:1; display:grid; place-items:center}
+.stepper button:disabled{opacity:.35}
+.stepper b{font-family:var(--font-mono); font-size:26px; min-width:1.3em; text-align:center}
+.lbset{display:flex; flex-direction:column; gap:6px; align-items:flex-start}
+.cntbox{display:grid; place-items:center}
+.cntps{display:flex; flex-wrap:wrap; gap:14px; justify-content:center}
+.cntp{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:76px; max-width:116px}
+.cntp .tagname{font-size:15px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cntp .you{background:var(--ink); color:var(--surface)}
+/* Mehr als zwei Spieler: Kopf als Reihe, Auflösung in Bahnen */
+.lvbar.multi{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:10px}
+.lvc{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:58px; max-width:100px; padding:5px 6px; border-radius:12px; border:2px solid transparent}
+.lvc.me{border-color:var(--accent)}
+.lvc.off .av{opacity:.4}
+.lvcn{display:block; max-width:100%}
+.lvcn .tagname{display:block; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:86px}
+.lvcr{display:flex; gap:5px; align-items:center; font-family:var(--font-mono); font-size:13px}
+.lvcr svg{width:13px; height:13px; color:var(--muted)}
+.lvcr b{font-size:15px; display:inline-block}
+.lvcr b.bump{animation:bump .45s ease-out}
+.lvcr .lvst{font-style:normal; min-height:0; min-width:1em; text-align:center; font-size:14px}
+.lanes{display:grid; grid-template-columns:auto repeat(var(--n), minmax(0,1fr)); border:2px solid var(--ink); border-radius:16px; overflow:hidden; background:var(--surface); box-shadow:4px 4px 0 var(--shade); width:100%; max-width:860px; margin-inline:auto}
+.lnleg,.lntrack{display:flex; flex-direction:column; position:relative}
+.ln{border-left:1.5px solid var(--line); min-width:0; transition:opacity .35s ease}
+.lnstart{height:40px; background:var(--surface-2); border-bottom:2px solid var(--ink)}
+.lncell{height:40px; display:flex; align-items:center; gap:6px; background-color:color-mix(in srgb, var(--tc) 24%, var(--surface)); border-top:1.5px dashed var(--line); transition:background-color .2s ease}
+.lnstart + .lncell{border-top:0}
+.lnleg .lncell{padding:0 10px 0 8px; font-family:var(--font-mono); font-size:13px; color:var(--ink); white-space:nowrap}
+.lnleg .lncell svg{width:18px; height:18px; flex:none}
+.ln .lncell.active{background-color:var(--tc)}
+.lnpin{position:absolute; left:50%; transform:translate(-50%,-50%); z-index:2; line-height:0}
+.lnpin .av{--s:28px; border-width:2px; box-shadow:0 2px 0 var(--shade)}
+.ln.me .lntrack{box-shadow:inset 0 0 0 2px var(--accent)}
+.ln.won .lnpin .av{box-shadow:0 0 0 3px var(--ok), 0 0 18px var(--ok)}
+.ln.lost{opacity:.72}
+.ln.same .lnpin{opacity:.5}
+.ln.miss .lnpin{opacity:.45; filter:grayscale(1)}
+.lnlist{list-style:none; margin:0 auto; padding:0; display:grid; gap:6px; width:100%; max-width:860px}
+.lnrow{display:grid; grid-template-columns:auto minmax(0,auto) minmax(0,1fr) auto; gap:8px; align-items:center; padding:6px 10px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface-2); min-width:0}
+.lnrow.me{border-color:var(--accent)}
+.lnn{display:flex; gap:6px; align-items:center; min-width:0}
+.lnn .tagname{font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.lnn .you{background:var(--ink); color:var(--surface); flex:none}
+.lnans{min-width:0; overflow-wrap:anywhere; font-weight:700; text-align:right}
+.lnans q{quotes:"„" "“"}
+.lnpts{font-family:var(--font-mono); font-size:14px; min-width:2.8em; text-align:right}
+.lnrow.won{border-color:var(--ok); box-shadow:0 0 0 2px var(--ok)}
+.lnrow.same .lnans q{text-decoration:line-through; text-decoration-thickness:2px}
+.lnrow.miss,.lnrow.lost{opacity:.75}
+.lnrow.landed .lnans{animation:rise .35s both}
+@media (min-width:760px){ .lnlist{grid-template-columns:repeat(2, minmax(0,1fr))} }
+/* Endstand mit mehreren Spielern */
+.rank{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+.rkrow{display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; column-gap:10px; row-gap:0; align-items:center; padding:8px 12px; border:2px solid var(--ink); border-radius:14px; background:var(--surface-2); min-width:0}
+.rkrow.me{box-shadow:3px 3px 0 var(--shade)}
+.rkrow.first{background:linear-gradient(135deg, var(--thread), var(--thread-2)); color:var(--thread-ink); box-shadow:4px 4px 0 var(--shade)}
+.rkrow.first .plink{color:inherit}
+.rkrow.first .you{background:var(--thread-ink); color:var(--thread)}
+.rkpl{font-family:var(--font-mono); font-size:20px; min-width:1.5em}
+.rkn{display:flex; align-items:center; gap:6px; min-width:0}
+.rkn .tagname{font-size:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.rkn .you{background:var(--ink); color:var(--surface); flex:none}
+.rkst{font-size:13px; white-space:nowrap}
+.rkst b{font-family:var(--font-mono); font-size:16px}
+.drows.mq .drow{display:flex; flex-direction:column; align-items:stretch; gap:8px}
+.mqa{display:flex; flex-wrap:wrap; gap:6px}
+.mqi{display:inline-flex; align-items:center; gap:6px; border:1.5px solid var(--line); border-radius:999px; padding:3px 10px 3px 3px; font-size:14px; background:var(--surface); max-width:100%; min-width:0}
+.mqi.win{border-color:var(--ink); box-shadow:2px 2px 0 var(--shade); font-weight:700}
+.mqi.same .mqt{text-decoration:line-through}
+.mqi.miss{opacity:.6}
+.mqn{color:var(--muted); font-size:12px; white-space:nowrap}
+.mqt{overflow-wrap:anywhere; min-width:0}
+.mulist{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
+@media (max-width:560px){
+  .lvbar.multi{gap:2px; padding:8px 4px}
+  .lvc{min-width:0; padding:3px 2px; flex:1 1 0}
+  .lvc .av{--s:30px}
+  .lvcn{display:none}
+  .lvcr{gap:3px; font-size:12px}
+  .lvcr svg{display:none}
+  .lvcr b{font-size:13px}
+  .lvcr .lvst{font-size:12px; min-width:.9em}
+  .lnleg .lncell{padding:0 6px 0 5px; font-size:12px; gap:4px}
+  .lnleg .lncell svg{width:15px; height:15px}
+  .lnpin .av{--s:24px}
+  .rkrow{grid-template-columns:auto auto minmax(0,1fr)}
+  .rkrow .rkpl,.rkrow > .av{grid-row:1 / span 2}
+  .rkst{grid-column:3; grid-row:2; font-size:12px}
+  .lbn .tagname{font-size:16px}
 }
 /* Kopfzeile: wie viele Spieler gerade online sind */
 .brandbox{display:flex; flex-direction:column; align-items:flex-start; min-width:0}
@@ -3131,9 +3243,9 @@ function duelStartHTML(){
   const recent=Object.entries(duelLocal).sort((a,b)=>(b[1].at||0)-(a[1].at||0)).slice(0,4);
   return `<article class="mode m-duel" id="duelCard">
     <div class="mart" aria-hidden="true">${I_VS}</div>
-    <span class="label">1 gegen 1 · live</span>
+    <span class="label">Live · 2 bis 9 Spieler</span>
     <h3>Duell</h3>
-    <p>Spielt gleichzeitig gegeneinander: Raum öffnen, 4-stelligen Code weitergeben, los. Wer die seltenere Antwort findet, holt die Runde.</p>
+    <p>Spielt gleichzeitig gegeneinander – zu zweit oder mit bis zu 8 Gegnern. Öffne eine Lobby (privat oder öffentlich) oder tritt einer bei.</p>
     <div class="acts"><button class="btn light" id="duelGo" type="button">Duell starten</button>
       ${recent.length?`<span class="drecent"><span class="hint">Deine Duelle:</span>${recent.map(([c])=>`<button class="chipbtn" type="button" data-code="${esc(c)}">${esc(c)}</button>`).join("")}</span>`:""}</div>
   </article>`;
@@ -3160,18 +3272,32 @@ function renderDuelNew(){
     $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
     return;
   }
+  const pref=lobbyPref();
   view.innerHTML=`<section class="card stack narrow livecard">
-    <span class="label">Duell · live, 1 gegen 1</span>
+    <span class="label">Duell · live</span>
     <h2>Spielt gleichzeitig gegeneinander.</h2>
-    ${LIVE_RULES()}
     <div class="lvchoice">
-      <div class="lvopt"><span class="label">Neuer Raum</span><button class="btn" id="lvCreate" type="button">Raum erstellen</button><span class="hint">Du bekommst einen 4-stelligen Code für deinen Gegner.</span></div>
+      <form class="lvopt" id="lbForm" autocomplete="off">
+        <span class="label">Lobby erstellen</span>
+        <div class="lbset">
+          <div class="seg" role="group" aria-label="Wer darf beitreten?"><button type="button" class="segb" id="lbPriv" aria-pressed="false">Privat</button><button type="button" class="segb" id="lbPub" aria-pressed="false">Öffentlich</button></div>
+          <span class="hint" id="lbPubHint"></span>
+        </div>
+        <div class="lbset">
+          <span class="label">Gegner</span>
+          <div class="stepper"><button type="button" id="lbMinus" aria-label="Ein Gegner weniger">–</button><b id="lbOpp" aria-live="polite">1</b><button type="button" id="lbPlus" aria-label="Ein Gegner mehr">+</button></div>
+          <span class="hint" id="lbOppHint"></span>
+        </div>
+        <button class="btn" id="lvCreate" type="submit">Lobby erstellen</button>
+      </form>
       <div class="lvor">oder</div>
       <form class="lvopt" id="lvJoinForm" autocomplete="off"><label class="label" for="lvCode">Code eingeben</label>
-        <div class="row"><input class="lvcode" id="lvCode" name="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" aria-label="4-stelliger Raum-Code"><button class="btn" type="submit" id="lvJoin">Beitreten</button></div>
-        <span class="hint">Den Code bekommst du von deinem Gegner.</span></form>
+        <div class="row"><input class="lvcode" id="lvCode" name="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" aria-label="4-stelliger Code der Lobby"><button class="btn" type="submit" id="lvJoin">Beitreten</button></div>
+        <span class="hint">Den Code bekommst du vom Gastgeber – damit kommst du auch in private Lobbys.</span></form>
     </div>
-    <p class="fb bad" id="duErr" role="alert"></p>
+    <p class="fb bad" id="duErr" role="alert" style="min-height:0"></p>
+    <div class="stack" style="gap:10px"><span class="label">Öffentliche Lobbys</span><div id="lbList"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Lobbys werden geladen …</span></div></div></div>
+    ${LIVE_RULES()}
     <div class="row"><button class="btn ghost small" id="menu3" type="button">Zurück</button><span class="hint">Du spielst als <b>${esc(account()?account().name:"")}</b></span></div>
   </section>`;
   $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
@@ -3179,10 +3305,24 @@ function renderDuelNew(){
   let busy=false;
   const lock=on=>{ busy=on; cBtn.disabled=on; jBtn.disabled=on; };
   const say=m=>{ const e=$("duErr"); if (e) e.textContent=m; };
-  cBtn.onclick=async()=>{
+  const paintPref=()=>{
+    $("lbPriv").classList.toggle("on", !pref.pub); $("lbPub").classList.toggle("on", pref.pub);
+    $("lbPriv").setAttribute("aria-pressed", String(!pref.pub)); $("lbPub").setAttribute("aria-pressed", String(pref.pub));
+    $("lbPubHint").textContent=pref.pub ? "Steht in der Liste – jeder kann beitreten." : "Nur mit Code oder Link.";
+    $("lbOpp").textContent=pref.opp;
+    $("lbMinus").disabled=pref.opp<=1; $("lbPlus").disabled=pref.opp>=LOBBY_MAX_OPP;
+    $("lbOppHint").textContent=pref.opp===1 ? "Du gegen einen – ein Duell zu zweit." : `Du gegen bis zu ${pref.opp} – also höchstens ${pref.opp+1} Spieler.`;
+  };
+  $("lbPriv").onclick=()=>{ pref.pub=false; saveLobbyPref(pref); paintPref(); };
+  $("lbPub").onclick=()=>{ pref.pub=true; saveLobbyPref(pref); paintPref(); };
+  $("lbMinus").onclick=()=>{ if (pref.opp>1){ pref.opp--; saveLobbyPref(pref); paintPref(); } };
+  $("lbPlus").onclick=()=>{ if (pref.opp<LOBBY_MAX_OPP){ pref.opp++; saveLobbyPref(pref); paintPref(); } };
+  paintPref();
+  $("lbForm").onsubmit=async ev=>{
+    ev.preventDefault();
     if (busy) return;
     lock(true); say("");
-    const msg=await createRoom();
+    const msg=await createRoom(pref.pub, pref.opp);
     if (msg && state.screen==="duelnew"){ say(msg); lock(false); }
   };
   inp.oninput=()=>{
@@ -3197,11 +3337,14 @@ function renderDuelNew(){
     if (!roomOk(room)){ say("Der Code hat 4 Ziffern."); inp.focus(); return; }
     lock(true); say("");
     let r=null, e2=null;
-    try{ r=await rpc("live_join", {p_player:local.playerId, p_room:room}); }catch(e){ e2=e; }
+    try{ r=await rpc("lobby_join", {p_player:local.playerId, p_room:room}); }catch(e){ e2=e; }
     if (state.screen!=="duelnew") return;
     if (e2 || !r || !r.code){ say(liveErr(e2)); lock(false); inp.focus(); inp.select(); return; }
     openLive(r.code);
   };
+  stopLobbyList();
+  loadLobbyList();
+  lobbyTimer=setInterval(loadLobbyList, 4000);
 }
 
 /* Duell öffnen – über den Link oder die Startseite */
@@ -3217,12 +3360,18 @@ async function openDuel(raw){
   let d=null, err=null;
   try{ d=await fetchDuel(code); }catch(e){ err=e; }
   if (state.screen!=="duelload" || state.code!==code) return;
-  if (err || !d){ state={screen:"duelerr", msg:duelErr(err||{code:"not_found"})}; render(); return; }
-  if (d.live && !d.final){
-    if (d.role) return openLive(d.code);            // läuft noch und ich bin dabei: wieder hinein
-    if (d.room && !d.b) return joinRoom(d.room);
-    return showDuel(d);                             // nur zuschauen
+  if (!err && !d){                                  // kein Duell-Ergebnis: eine Lobby oder ein laufendes Spiel?
+    let lb=null;
+    try{ lb=await rpc("lobby_poll", {p_code:code, p_player:local.playerId, p_here:false}); }catch(e){ if (!(e && e.status===404)) err=e; }
+    if (state.screen!=="duelload" || state.code!==code) return;
+    if (lb && Array.isArray(lb.players)){
+      if (lb.final && lb.phase==="done") return showLobbyResult(lb);
+      if (lb.in) return openLive(lb.code);          // läuft noch und ich bin dabei: wieder hinein
+      if (lb.phase==="open" && !lb.kicked) return joinRoom(lb.room);
+      return showLobbyWatch(lb);                    // nur zuschauen
+    }
   }
+  if (err || !d){ state={screen:"duelerr", msg:duelErr(err||{code:"not_found"})}; render(); return; }
   // Abgebrochener eigener Versuch: zählt mit dem bisherigen Stand.
   const mine=duelLocal[code], side=d.role && d[d.role];
   if (mine && mine.secret && mine.status!=="done" && side && side.status==="playing"){
@@ -3447,25 +3596,34 @@ async function animateDuel(an, d){
   buzz(won ? [30,40,80] : 20);
 }
 
-/* ======================= Live-Duell: Raum mit Code, gemeinsame Uhr, Doppel-Schacht =======================
-   Die Uhr führt die Datenbank: Sie nennt den Start jeder Frage und jeder Auflösung. Die Seite fragt den
-   Stand etwa einmal pro Sekunde ab (live_poll), rechnet die Serverzeit auf die eigene Uhr um und zeigt
-   danach Countdown, Frage und Auflösung. Was der Gegner geantwortet hat, kommt erst zur Auflösung. */
+/* ======================= Live-Duell in Lobbys: 2 bis 9 Spieler, gemeinsame Uhr =======================
+   Eine Lobby ist privat (nur mit Code oder Link) oder öffentlich (steht in der Liste). Der Gastgeber kann
+   Spieler entfernen und startet das Spiel. Die Uhr führt die Datenbank: Sie nennt den Start jeder Frage
+   und jeder Auflösung. Die Seite fragt den Stand etwa einmal pro Sekunde ab (lobby_poll), rechnet die
+   Serverzeit auf die eigene Uhr um und zeigt danach Countdown, Frage und Auflösung. Was die anderen
+   geantwortet haben, kommt erst zur Auflösung. */
 const roomOk=v=>/^\d{4}$/.test(String(v||""));
-const LIVE_ERR={not_found:"Diesen Raum gibt es nicht (mehr). Prüf den Code.", taken:"In diesem Raum sind schon zwei Spieler.",
-  need_account:"Dafür brauchst du ein Profil. Bitte melde dich an.", too_many:"Du hast heute schon sehr viele Duelle gestartet. Morgen geht’s weiter.",
-  network:"Keine Verbindung. Prüf dein Internet und versuch es nochmal.", not_done:"Das Duell läuft noch.",
-  gone:"Dieses Duell nutzt Fragen, die deine Seite nicht kennt. Lade die Seite neu und versuch es nochmal."};
-const liveErr=e=>(e && e.status===404) ? "Das Live-Duell ist noch nicht eingerichtet: In Supabase muss einmal das Skript setup.sql laufen."
+const LIVE_ERR={not_found:"Diese Lobby gibt es nicht (mehr). Prüf den Code.", full:"Diese Lobby ist schon voll.",
+  kicked:"Der Gastgeber hat dich aus dieser Lobby entfernt.", not_host:"Das kann nur der Gastgeber.",
+  need_players:"Zum Starten muss mindestens ein Gegner in der Lobby sein.", already_started:"Das Spiel läuft schon.",
+  need_account:"Dafür brauchst du ein Profil. Bitte melde dich an.", too_many:"Du hast heute schon sehr viele Lobbys geöffnet. Morgen geht’s weiter.",
+  network:"Keine Verbindung. Prüf dein Internet und versuch es nochmal.", not_done:"Das Spiel läuft noch.", not_allowed:"Du warst bei diesem Spiel nicht dabei.",
+  gone:"Dieses Spiel nutzt Fragen, die deine Seite nicht kennt. Lade die Seite neu und versuch es nochmal."};
+const liveErr=e=>(e && e.status===404) ? "Die Lobbys sind noch nicht eingerichtet: In Supabase muss einmal das Skript setup.sql laufen."
   : LIVE_ERR[e && e.code] || "Das hat nicht geklappt. Versuch es nochmal.";
 let live=null;
 function setDuelParam(code){ try{ history.replaceState(null, "", location.pathname+"?duell="+encodeURIComponent(code)+location.hash); }catch(e){} }
 const liveNow=()=>Date.now()+(live ? live.off : 0);
+const LOBBY_MAX_OPP=8;
+const ZU_N={2:"zweit", 3:"dritt", 4:"viert", 5:"fünft", 6:"sechst", 7:"siebt", 8:"acht", 9:"neunt"};
+const LBKEY="heuhaufen:lobby";
+function lobbyPref(){ const d={pub:false, opp:1}; try{ const o=JSON.parse(localStorage.getItem(LBKEY)||"{}"); if (o && typeof o==="object"){ d.pub=!!o.pub; const n=Math.round(Number(o.opp)); if (n>=1 && n<=LOBBY_MAX_OPP) d.opp=n; } }catch(e){} return d; }
+function saveLobbyPref(p){ try{ localStorage.setItem(LBKEY, JSON.stringify(p)); }catch(e){} }
 
-/* Raum öffnen / betreten */
-async function createRoom(){
+/* Lobby öffnen / betreten */
+async function createRoom(pub, opp){
   let r;
-  try{ r=await rpc("live_create", {p_player:local.playerId, p_qids:pickDuelQs().map(qidOf)}); }catch(e){ return liveErr(e); }
+  try{ r=await rpc("lobby_create", {p_player:local.playerId, p_qids:pickDuelQs().map(qidOf), p_public:!!pub, p_cap:Math.min(LOBBY_MAX_OPP, Math.max(1, opp|0))+1}); }catch(e){ return liveErr(e); }
   if (!r || !r.code) return liveErr(null);
   openLive(r.code);
   return "";
@@ -3475,7 +3633,7 @@ async function joinRoom(room){
   if (!account()) return openAuth({to:"join", code:room}, "register", "Zum Mitspielen brauchst du ein Profil – das geht in ein paar Sekunden.");
   state={screen:"duelload", code:room}; render();
   let r=null, err=null;
-  try{ r=await rpc("live_join", {p_player:local.playerId, p_room:room}); }catch(e){ err=e; }
+  try{ r=await rpc("lobby_join", {p_player:local.playerId, p_room:room}); }catch(e){ err=e; }
   if (state.screen!=="duelload" || state.code!==room) return;
   if (err || !r || !r.code){ state={screen:"duelerr", msg:liveErr(err)}; render(); return; }
   openLive(r.code);
@@ -3484,7 +3642,7 @@ function openLive(code){
   liveStop();
   state={screen:"live", code, tries:[], fb:"", fbBad:false};
   live={code, d:null, qs:null, off:0, samples:[], t:null, iv:null, busy:false, again:false, fails:0, lastOk:Date.now(), keep:false,
-        sig:"", qi:-1, mine:{}, played:{}, oppAns:{}, tok:null, cnt:null, tickSec:null, rk:-1, fresh:false};
+        sig:"", qi:-1, mine:{}, played:{}, oppAns:{}, tok:null, cnt:null, tickSec:null, rk:-1, fresh:false, rejoin:false, n0:0};
   setDuelParam(code);
   render();
   live.iv=setInterval(liveFrame, 100);
@@ -3497,8 +3655,8 @@ function liveStop(){
   live=null; liveTitle(null);
   clearTimeout(L.t); clearInterval(L.iv);
   if (L.tok) L.tok.skip=true;
-  // Vor dem Start weggegangen: Der Gastgeber schließt damit den Raum, der Gast macht seinen Platz frei.
-  if (!L.keep && L.d && L.d.role && L.d.q_at==null) rpc("live_leave", {p_code:L.code, p_player:local.playerId}).catch(()=>{});
+  // Vor dem Start weggegangen: Platz freigeben (geht der Gastgeber, übernimmt der Nächste – oder die Lobby schließt).
+  if (!L.keep && L.d && L.d.in && L.d.q_at==null) rpc("lobby_leave", {p_code:L.code, p_player:local.playerId}).catch(()=>{});
 }
 
 /* Abfragen */
@@ -3507,30 +3665,35 @@ function liveDelay(){
   return ph==="revwait" ? 250 : ph==="reveal" ? 2500 : ph==="ask" ? 900 : ph==="load" ? 600 : 1000;
 }
 function liveKick(){ const L=live; if (!L) return; if (L.busy){ L.again=true; return; } clearTimeout(L.t); L.t=null; livePoll(); }
+function liveFail(msg){ const L=live; if (L) L.keep=true; state={screen:"duelerr", msg}; render(); }
 async function livePoll(){
   const L=live; if (!L || L.busy) return;
   L.busy=true; clearTimeout(L.t); L.t=null;
   const t0=Date.now(); let d, err=null;
   const here=!!(L.d && L.d.q_at!=null) || document.visibilityState!=="hidden";      // vor dem Start zählt nur, wer die Seite vor sich hat
-  try{ d=await rpc("live_poll", {p_code:L.code, p_player:local.playerId, p_here:here}); }catch(e){ err=e; }
+  try{ d=await rpc("lobby_poll", {p_code:L.code, p_player:local.playerId, p_here:here}); }catch(e){ err=e; }
   const t1=Date.now();
   if (live!==L) return;
   L.busy=false;
   if (err){
     L.fails++;
-    if (err.status===404 || (!L.d && L.fails>=3)){ L.keep=true; state={screen:"duelerr", msg:liveErr(err)}; render(); return; }
+    if (err.status===404 || (!L.d && L.fails>=3)) return liveFail(liveErr(err));
   } else if (!d){
-    const guest=L.d && L.d.role==="b";
-    L.keep=true; state={screen:"duelerr", msg:guest ? "Der Raum wurde geschlossen." : "Diesen Raum gibt es nicht mehr."}; render(); return;
-  } else if (!d.role){
-    L.keep=true; const code=L.code; liveStop(); openDuel(code); return;      // nicht (mehr) dabei: nur zuschauen
-  } else { L.fails=0; L.lastOk=t1; liveApply(d, t0, t1); }
+    return liveFail(L.d && !L.d.host ? "Die Lobby wurde geschlossen." : "Diese Lobby gibt es nicht mehr.");
+  } else if (!d.in){
+    if (d.kicked) return liveFail(LIVE_ERR.kicked);
+    if (d.phase==="open" && !L.rejoin){
+      L.rejoin=true;                                   // Platz verloren (z. B. Seite länger im Hintergrund): einmal wieder hinein
+      try{ await rpc("lobby_join", {p_player:local.playerId, p_room:d.room}); }catch(e){ if (live===L) return liveFail(liveErr(e)); }
+      if (live!==L) return;
+    } else { const code=L.code; L.keep=true; liveStop(); openDuel(code); return; }       // läuft ohne mich: nur zuschauen
+  } else { L.fails=0; L.lastOk=t1; L.rejoin=false; liveApply(d, t0, t1); }
   if (live!==L) return;
   const again=L.again; L.again=false;
   L.t=setTimeout(livePoll, again ? 0 : liveDelay());
 }
 function liveApply(d, t0, t1){
-  const L=live; if (!L || !d || typeof d.now!=="number") return;
+  const L=live; if (!L || !d || typeof d.now!=="number" || !Array.isArray(d.players)) return;
   if (t1>=t0){
     L.samples.push({rtt:t1-t0, off:d.now-(t0+t1)/2}); if (L.samples.length>8) L.samples.shift();
     L.off=L.samples.reduce((b,s)=>s.rtt<b.rtt ? s : b).off;       // die schnellste Abfrage misst die Uhr am genauesten
@@ -3539,10 +3702,13 @@ function liveApply(d, t0, t1){
   const prev=L.d; L.d=d;
   if (!L.qs){
     L.qs=(d.qids||[]).map(id=>{ const i=qIndex(id); return i===undefined ? null : getQ(i); });
-    if (L.qs.length!==ROUND_LEN || L.qs.some(q=>!q)){ L.keep=true; state={screen:"duelerr", msg:LIVE_ERR.gone}; render(); return; }
+    if (L.qs.length!==ROUND_LEN || L.qs.some(q=>!q)) return liveFail(LIVE_ERR.gone);
   }
-  if (prev && !prev.b && d.b){ sfx("up"); buzz(30); if (document.visibilityState==="hidden") liveTitle(`${d.b.name} ist da!`); }   // der Gegner ist da
-  if (d.q_at!=null && !duelLocal[d.code]){ duelLocal[d.code]={role:d.role, secret:null, at:Date.now(), status:"done"}; saveDuelLocal(); }
+  if (prev && d.q_at==null && d.players.length>prev.players.length){      // jemand ist dazugekommen
+    sfx("up"); buzz(30);
+    if (document.visibilityState==="hidden"){ const nu=d.players.find(p=>!prev.players.some(q=>q.pid===p.pid)); liveTitle(`${nu ? nu.name : "Jemand"} ist da!`); }
+  }
+  if (d.q_at!=null && !duelLocal[d.code]){ duelLocal[d.code]={role:"a", secret:null, at:Date.now(), status:"done"}; saveDuelLocal(); }
   liveFrame();
 }
 
@@ -3550,8 +3716,7 @@ function liveApply(d, t0, t1){
 function liveView(){
   const L=live, d=L && L.d;
   if (!d) return {ph:"load"};
-  if (!d.b) return {ph:"wait"};
-  if (d.q_at==null) return {ph:"ready"};
+  if (d.q_at==null) return {ph:"open"};
   const now=liveNow();
   let i=d.i, q=d.q_at, rev=d.rev_at;
   for (;;){
@@ -3564,30 +3729,55 @@ function liveView(){
     i++; q=revT+d.reveal_ms; rev=null;                                       // die nächste Frage beginnt nach fester Zeit
   }
 }
+const liveMeIdx=d=>d.players.findIndex(p=>p.me);
 function liveMine(i){
   const L=live; if (!L) return null;
   if (L.mine[i]) return L.mine[i];
-  const me=L.d && L.d.role && L.d[L.d.role];
+  const me=L.d && L.d.players.find(p=>p.me);
   if (me && Array.isArray(me.tiers) && me.tiers.length>i) return (L.mine[i]={tier:me.tiers[i], name:(me.answers||[])[i]||"", typed:"", how:me.tiers[i]<0?"pass":"", sent:true});
   return null;
 }
-function liveRows(d, n){
-  const cut=x=>({tiers:((x && x.tiers)||[]).slice(0,n), answers:((x && x.answers)||[]).slice(0,n)});
-  return duelOutcome({qids:(d.qids||[]).slice(0,n), a:cut(d.a), b:cut(d.b)});
+/* Wertung der ersten n Fragen: gleiche Antworten zählen für keinen; die Runde holt, wer als Einziger am tiefsten landet. */
+function lobbyOutcome(d, n){
+  const P=d.players, N=P.length;
+  const tot=P.map(()=>({rounds:0, pts:0}));
+  const rows=[];
+  for (let j=0;j<n;j++){
+    const qi=qIndex((d.qids||[])[j]);
+    const per=P.map(p=>{ const t=Number.isInteger(p.tiers && p.tiers[j]) ? p.tiers[j] : -1; return {t, a:String((p.answers && p.answers[j])||""), dup:false, vt:-1, pts:0, win:false}; });
+    const seen=new Map();
+    per.forEach(x=>{ if (x.t>=0 && x.a){ const k=norm(x.a)||x.a.toLowerCase(); seen.set(k, (seen.get(k)||0)+1); } });
+    per.forEach(x=>{ if (x.t>=0 && x.a){ const k=norm(x.a)||x.a.toLowerCase(); x.dup=seen.get(k)>1; } x.vt=(x.t>=0 && !x.dup) ? x.t : -1; x.pts=x.vt>=0 ? TIERS[x.vt].pts : 0; });
+    const top=Math.max(-1, ...per.map(x=>x.vt)), at=per.filter(x=>x.vt===top).length;
+    const win=top>=0 && at===1 ? per.findIndex(x=>x.vt===top) : -1;
+    if (win>=0){ per[win].win=true; tot[win].rounds++; }
+    per.forEach((x,k)=>{ tot[k].pts+=x.pts; });
+    rows.push({q:qi===undefined ? "(Diese Frage gibt es nicht mehr)" : BANK[qi].q, per, top, win, anyDup:per.some(x=>x.dup), anyHit:per.some(x=>x.t>=0)});
+  }
+  const order=P.map((_,k)=>k).sort((a,b)=>tot[b].rounds-tot[a].rounds || tot[b].pts-tot[a].pts || a-b);
+  const place=P.map(()=>1);
+  order.forEach((k,pos)=>{ const better=order.filter(o=>tot[o].rounds>tot[k].rounds || (tot[o].rounds===tot[k].rounds && tot[o].pts>tot[k].pts)).length; place[k]=better+1; });
+  const firsts=order.filter(k=>place[k]===1);
+  return {rows, tot, order, place, winner:firsts.length===1 ? firsts[0] : -1, N};
 }
 
 /* Zehnmal pro Sekunde: Phase prüfen, bei einem Wechsel neu zeichnen, sonst nur Uhr und Status nachführen. */
 function liveFrame(){
   const L=live; if (!L || state.screen!=="live") return;
-  const v=liveView();
-  if (v.ph==="done"){ const code=L.code; L.keep=true; liveStop(); refreshMe(); openDuel(code); return; }
+  const v=liveView(), d=L.d;
+  if (v.ph==="done"){
+    const code=L.code, data=d; L.keep=true; liveStop(); refreshMe();
+    if (data.players.length===2) openDuel(code); else showLobbyResult(data);
+    return;
+  }
   if (v.ph==="ask" || v.ph==="revwait"){
     if (L.qi!==v.i){ L.qi=v.i; L.tickSec=null; L.fresh=true; state.tries=[]; state.fb=""; state.fbBad=false; sfx("go"); liveKick(); }
     if (!liveMine(v.i) && liveNow()>=v.end){ L.mine[v.i]={tier:-1, name:"", typed:"", how:"timeout", sent:true}; sfx("timeout"); buzz([60,50,60]); }
     if (v.ph==="revwait" && L.rk!==v.i){ L.rk=v.i; liveKick(); }
   }
   const mine = v.ph==="ask" || v.ph==="revwait" ? liveMine(v.i) : null;
-  const sig=[v.ph==="revwait" ? "ask" : v.ph, v.i, mine ? (mine.how||"ok") : "", L.d && L.d.b ? L.d.b.pid : ""].join("|");
+  const lob = d && v.ph==="open" ? d.players.map(p=>p.pid+(p.here?"+":"-")+(p.host?"h":"")).join(",")+"|"+d.cap+"|"+(d.public?1:0)+"|"+(d.host?1:0) : "";
+  const sig=[v.ph==="revwait" ? "ask" : v.ph, v.i, mine ? (mine.how||"ok") : "", d ? d.players.length : 0, lob].join("|");
   if (sig!==L.sig){ L.sig=sig; renderLive(v); }
   else liveDyn(v);
 }
@@ -3596,11 +3786,11 @@ function renderLive(v){
   const L=live; if (!L) return;
   if (L.tok){ L.tok.skip=true; L.tok=null; }
   const d=L.d;
-  if (!d){ view.innerHTML=`<section class="card stack narrow"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Der Raum wird geöffnet …</span></div></section>`; return; }
+  if (!d){ view.innerHTML=`<section class="card stack narrow"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Die Lobby wird geöffnet …</span></div></section>`; return; }
   v=v||liveView();
-  sideOverride={pids:[d.a.pid, d.b ? d.b.pid : null]};
-  if (v.ph==="wait") liveLobby(d);
-  else if (v.ph==="ready" || v.ph==="count") liveReady(d, v);
+  sideOverride={pids:[d.players[0] ? d.players[0].pid : null, d.players.length===2 ? d.players[1].pid : null]};
+  if (v.ph==="open") liveLobby(d);
+  else if (v.ph==="count") liveCount(d, v);
   else if (v.ph==="ask" || v.ph==="revwait") liveAsk(d, v);
   else if (v.ph==="reveal") liveShow(d, v);
   else return;
@@ -3609,26 +3799,54 @@ function renderLive(v){
   liveDyn(v);
 }
 
-/* Raum offen: Code zeigen und auf den Gegner warten */
+/* Die Lobby: Code, Spielerliste, Kicken, Start */
 function liveLobby(d){
-  const room=String(d.room||"");
+  const room=String(d.room||""), P=d.players, host=P.find(p=>p.host), n=P.length;
+  const rows=P.map(p=>`<li class="lbp${p.me?" me":""}${p.here?"":" away"}">${avatarHTML(p.pid, p.name, "m")}
+      <span class="lbn"><span class="tagname"${nmAttr(p.pid)}>${esc(p.name)}</span>${p.host?`<span class="lbhost">Gastgeber</span>`:""}${p.me?`<span class="you">Du</span>`:""}</span>
+      <small class="lbst">${p.here ? "bereit" : "gerade nicht da"}</small>
+      ${d.host && !p.me ? `<button class="btn ghost small lbkick" type="button" data-kick="${esc(p.pid)}" data-name="${esc(p.name)}">Kicken</button>` : ""}</li>`).join("")
+    +Array.from({length:Math.max(0, d.cap-n)}, ()=>`<li class="lbp free"><span class="av m" style="--avc:transparent;--avt:var(--muted)" aria-hidden="true">?</span><span class="lbn hint">frei</span></li>`).join("");
+  const ready=P.filter(p=>p.here || p.me).length;
   view.innerHTML=`<section class="card stack narrow livecard">
-    <span class="label">Live-Duell · dein Raum</span>
-    <h2>Gib deinem Gegner diesen Code.</h2>
-    <div class="roomcode" role="img" aria-label="Raum-Code ${esc(room.split("").join(" "))}">${room.split("").map(c=>`<span>${esc(c)}</span>`).join("")}</div>
-    <p class="lede">Er tippt ihn unter <b>Duell</b> bei „Code eingeben“ ein. Oder du schickst ihm den Link – dann ist er mit einem Tipp im Raum.</p>
-    <div class="sharebox">
-      <span class="label">Link zum Raum</span>
-      <div class="linkrow"><input id="duelLink" readonly value="${esc(duelLink(room))}" aria-label="Link zum Raum"><button class="btn small" id="duelShare" type="button">Link teilen</button></div>
-      <p class="hint" id="duelShareMsg">Sobald ihr beide im Raum seid, startet der Countdown von selbst.</p>
+    <span class="label">Lobby · ${d.public ? "öffentlich" : "privat"} · ${n} von ${d.cap} Spielern</span>
+    <h2>${d.host ? "Deine Lobby" : `Lobby von ${esc(host ? host.name : "???")}`}</h2>
+    <div class="lbtop">
+      <div class="roomcode${live && !live.lobbyShown ? " anim" : ""}" role="img" aria-label="Code ${esc(room.split("").join(" "))}">${room.split("").map(c=>`<span>${esc(c)}</span>`).join("")}</div>
+      <div class="sharebox">
+        <span class="label">${d.public ? "Öffentlich: steht in der Liste. Code oder Link gehen auch." : "Privat: nur mit diesem Code oder dem Link"}</span>
+        <div class="linkrow"><input id="duelLink" readonly value="${esc(duelLink(room))}" aria-label="Link zur Lobby"><button class="btn small" id="duelShare" type="button">Link teilen</button></div>
+        <p class="hint" id="duelShareMsg">Den Code tippt man unter „Duell“ bei „Code eingeben“ ein.</p>
+      </div>
     </div>
-    <div class="loading"><span class="spin" aria-hidden="true"></span><span>Warte auf deinen Gegner …</span></div>
+    <ol class="lbplayers">${rows}</ol>
+    ${d.host ? `<div class="row"><button class="btn" id="lbStart" type="button"${ready>=2?"":" disabled"}>Spiel starten</button><span class="hint">${ready>=2 ? (P.some(p=>!p.here && !p.me) ? "Wer gerade nicht da ist, spielt nicht mit." : `Ihr seid zu ${ZU_N[n]||n} – es kann losgehen.`) : "Sobald mindestens ein Gegner da ist, kannst du starten."}</span></div>`
+      : `<div class="loading"><span class="spin" aria-hidden="true"></span><span>Warte, bis ${esc(host ? host.name : "der Gastgeber")} das Spiel startet …</span></div>`}
+    <p class="fb bad" id="lbErr" role="alert" style="min-height:0"></p>
     <p class="hint lvnet" id="lvNet" hidden>Verbindung unterbrochen – ich versuche es weiter …</p>
-    <div class="row"><button class="btn ghost small" id="lvLeave" type="button">Raum schließen</button></div>
+    <div class="row"><button class="btn ghost small" id="lvLeave" type="button">Lobby verlassen</button></div>
   </section>`;
+  if (live) live.lobbyShown=true;
   $("lvLeave").onclick=goStart;
+  const say=m=>{ const e=$("lbErr"); if (e) e.textContent=m; };
+  if ($("lbStart")) $("lbStart").onclick=async()=>{
+    const L=live, btn=$("lbStart"); if (!L || btn.disabled) return;
+    btn.disabled=true; say("");
+    const t0=Date.now(); let r=null, e2=null;
+    try{ r=await rpc("lobby_start", {p_code:L.code, p_player:local.playerId}); }catch(e){ e2=e; }
+    if (live!==L) return;
+    if (e2){ say(liveErr(e2)); if ($("lbStart")) $("lbStart").disabled=false; liveKick(); return; }
+    liveApply(r, t0, Date.now());
+  };
+  view.querySelectorAll("[data-kick]").forEach(b=>{ b.onclick=async()=>{
+    const L=live; if (!L) return;
+    if (!b.dataset.sure){ b.dataset.sure="1"; b.textContent="Wirklich?"; b.classList.add("warn"); setTimeout(()=>{ if (b.isConnected){ delete b.dataset.sure; b.textContent="Kicken"; b.classList.remove("warn"); } }, 3000); return; }
+    b.disabled=true; say("");
+    try{ await rpc("lobby_kick", {p_code:L.code, p_player:local.playerId, p_pid:b.dataset.kick}); }catch(e){ if (live===L) say(liveErr(e)); }
+    if (live===L) liveKick();
+  }; });
   const btn=$("duelShare"), inp=$("duelLink"), msg=$("duelShareMsg");
-  const url=duelLink(room), text=`${d.a.name} fordert dich bei Heuhaufen zum Live-Duell heraus! Raum-Code: ${room}`;
+  const url=duelLink(room), text=`${host ? host.name : "Jemand"} lädt dich bei Heuhaufen zum Live-Duell ein! Code: ${room}`;
   inp.onfocus=()=>inp.select();
   btn.onclick=async()=>{
     if (navigator.share){ try{ await navigator.share({title:"Heuhaufen: Live-Duell", text, url}); return; }catch(e){ if (e && e.name==="AbortError") return; } }
@@ -3637,36 +3855,38 @@ function liveLobby(d){
   };
 }
 
-/* Beide im Raum – und der Countdown */
+/* Countdown */
 const LIVE_RULES=()=>`<ul class="rules">
-      <li>${I_CLOCK}<span><b>Dieselbe Frage zur selben Zeit:</b> 5 Fragen, je 30 Sekunden, die Uhr läuft für euch beide.</span></li>
-      <li>${I_CHECK}<span><b>Du siehst nur, dass dein Gegner geantwortet hat</b> – nicht, was.</span></li>
-      <li>${I_TROPHY}<span><b>Bei der Auflösung sinken beide Nadeln gleichzeitig.</b> Wer tiefer landet, holt die Runde. Gleiche Antwort zählt für keinen.</span></li>
+      <li>${I_CLOCK}<span><b>Dieselbe Frage zur selben Zeit:</b> 5 Fragen, je 30 Sekunden, die Uhr läuft für alle.</span></li>
+      <li>${I_CHECK}<span><b>Du siehst nur, wer schon geantwortet hat</b> – nicht, was.</span></li>
+      <li>${I_TROPHY}<span><b>Bei der Auflösung sinken alle Nadeln gleichzeitig.</b> Wer als Einziger am tiefsten landet, holt die Runde. Gleiche Antworten zählen für keinen.</span></li>
     </ul>`;
-function liveReady(d, v){
-  const role=d.role, cnt=v.ph==="count";
-  const side=(x,k)=>`<div class="vside${role===k?" me":""}">${avatarHTML(x.pid, x.name, "l")}<span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${role===k?`<span class="you">Du</span>`:""}<small id="lvrs_${k}"></small></div>`;
+function liveCount(d, v){
+  const P=d.players;
   view.innerHTML=`<section class="card stack narrow livecard">
-    <span class="label">Live-Duell${cnt ? "" : " · Raum "+esc(d.room||"")}</span>
-    <h2>${cnt ? "Macht euch bereit!" : "Ihr seid beide im Raum."}</h2>
-    <div class="vs">${side(d.a,"a")}<div class="vmid">${cnt ? `<b class="lvcount" id="lvCount" role="timer">${Math.max(1, Math.ceil((v.q-liveNow())/1000))}</b>` : `<span class="vsbadge">VS</span>`}</div>${side(d.b,"b")}</div>
-    <p class="lede" id="lvSub" style="font-size:17px"></p>
+    <span class="label">Live-Duell · ${P.length===2 ? "1 gegen 1" : P.length+" Spieler"}</span>
+    <h2>Macht euch bereit!</h2>
+    <div class="cntbox"><b class="lvcount" id="lvCount" role="timer">${Math.max(1, Math.ceil((v.q-liveNow())/1000))}</b></div>
+    <div class="cntps">${P.map(p=>`<div class="cntp${p.me?" me":""}">${avatarHTML(p.pid, p.name, "l")}<span class="tagname"${nmAttr(p.pid)}>${esc(p.name)}</span>${p.me?`<span class="you">Du</span>`:""}</div>`).join("")}</div>
+    <p class="lede" style="font-size:17px">Gleich kommt die erste Frage.</p>
     ${LIVE_RULES()}
     <p class="hint lvnet" id="lvNet" hidden>Verbindung unterbrochen – ich versuche es weiter …</p>
-    ${cnt ? "" : `<div class="row"><button class="btn ghost small" id="lvLeave" type="button">${role==="a" ? "Raum schließen" : "Raum verlassen"}</button></div>`}
   </section>`;
-  if ($("lvLeave")) $("lvLeave").onclick=goStart;
 }
 
-/* Kopf des Spiels: beide Spieler, Rundenstand, Status */
-function liveBarHTML(d, sc){
-  const side=(x,k)=>`<div class="lvp ${k}${d.role===k?" me":""}" id="lvp_${k}">${avatarHTML(x.pid, x.name, "m")}<div class="lvpn"><span class="lvnm"><span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${d.role===k?`<span class="you">Du</span>`:""}</span><small class="lvst" id="lvst_${k}"></small></div></div>`;
-  return `<div class="lvbar">${side(d.a,"a")}<div class="lvmid"><b id="lvRounds">${sc.wa}:${sc.wb}</b><small>Runden</small></div>${side(d.b,"b")}</div>`;
+/* Kopf des Spiels: die Spieler, Rundenstand, Status. Zu zweit groß mit Stand in der Mitte, sonst als Reihe. */
+function liveBarHTML(d, o){
+  const P=d.players;
+  if (P.length===2){
+    const side=(x,k)=>`<div class="lvp ${k?"b":"a"}${x.me?" me":""}" id="lvp_${k}">${avatarHTML(x.pid, x.name, "m")}<div class="lvpn"><span class="lvnm"><span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${x.me?`<span class="you">Du</span>`:""}</span><small class="lvst" id="lvst_${k}"></small></div></div>`;
+    return `<div class="lvbar">${side(P[0],0)}<div class="lvmid"><b id="lvRounds">${o.tot[0].rounds}:${o.tot[1].rounds}</b><small>Runden</small></div>${side(P[1],1)}</div>`;
+  }
+  return `<div class="lvbar multi">${P.map((x,k)=>`<div class="lvc${x.me?" me":""}" id="lvp_${k}" title="${esc(x.name)}">${avatarHTML(x.pid, x.name, "m")}<span class="lvcn"><span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span></span><span class="lvcr" title="Gewonnene Runden">${I_TROPHY}<b id="lvr_${k}">${o.tot[k].rounds}</b><i class="lvst" id="lvst_${k}"></i></span></div>`).join("")}</div>`;
 }
 
 /* Die Frage läuft */
 function liveAsk(d, v){
-  const L=live, Q=L.qs[v.i], mine=liveMine(v.i), opp=d[d.role==="a"?"b":"a"];
+  const L=live, Q=L.qs[v.i], mine=liveMine(v.i), two=d.players.length===2, opp=two ? d.players.find(p=>!p.me) : null;
   const pips=L.qs.map((_,j)=>`<span class="pip${j<v.i?" done":j===v.i?" now":""}"></span>`).join("");
   const left=Math.max(0, (v.end-liveNow())/1000);
   const known=Q.entries.filter(e=>!e.ai).length;
@@ -3679,7 +3899,7 @@ function liveAsk(d, v){
         <button class="btn" type="submit" id="send">Antworten</button>
       </form>
       <div class="fb${state.fbBad?" bad":""}" id="fb" role="status" aria-live="polite">${esc(state.fb||"")}</div>
-      <p class="lvhurry" id="lvHurry" hidden>${I_CLOCK}<span><b>${esc(opp.name)}</b> hat schon geantwortet!</span></p>
+      <p class="lvhurry" id="lvHurry" hidden>${I_CLOCK}<span id="lvHurryTxt"></span></p>
       <div class="row" style="justify-content:space-between; align-items:flex-start">
         <div class="tries" id="tries">${state.tries.map(t=>`<span class="try">${esc(t)}</span>`).join("")}</div>
         <button class="btn ghost small" id="pass" type="button">Passen</button>
@@ -3694,7 +3914,7 @@ function liveAsk(d, v){
       <p class="lvwait"><span class="spin" aria-hidden="true"></span><span id="lvWait"></span></p></div>`;
   }
   view.innerHTML=`<section class="card stack playcard livecard${fresh?" qenter":""}">
-    ${liveBarHTML(d, liveRows(d, v.i))}
+    ${liveBarHTML(d, lobbyOutcome(d, v.i))}
     <div class="qhead">
       <span class="chip">${catIcon(Q.k)}${esc(Q.k)}</span>
       <div class="row" style="gap:10px"><div class="pips" aria-hidden="true">${pips}</div><span class="prog">Live-Duell · Frage ${v.i+1}/${ROUND_LEN}</span></div>
@@ -3737,7 +3957,7 @@ function liveAnswer(i, tier, name, typed, how){
   liveFrame();
   (async function send(n){
     const t0=Date.now(); let d;
-    try{ d=await rpc("live_answer", {p_code:L.code, p_player:local.playerId, p_i:i, p_tier:tier, p_answer:tier>=0 ? String(name).slice(0,60) : ""}); }
+    try{ d=await rpc("lobby_answer", {p_code:L.code, p_player:local.playerId, p_i:i, p_tier:tier, p_answer:tier>=0 ? String(name).slice(0,60) : ""}); }
     catch(e){
       if (live!==L) return;
       if (e.code==="already"){ m.sent=true; return; }
@@ -3750,43 +3970,56 @@ function liveAnswer(i, tier, name, typed, how){
   })(0);
 }
 
-/* Auflösung: zwei Schächte, beide Nadeln sinken gleichzeitig */
+/* Auflösung: Alle Nadeln sinken gleichzeitig. Zu zweit in zwei großen Schächten, sonst in Bahnen nebeneinander. */
 function liveVerdict(d, r){
-  const me=d.role==="a" ? 1 : 2, A=esc(d.a.name), B=esc(d.b.name);
-  if (r.same) return {cls:"same", t:"Gleiche Antwort!", s:"Die zählt für keinen."};
-  if (r.ta<0 && r.tb<0) return {cls:"none", t:"Keiner trifft.", s:"Diese Runde bleibt ohne Sieger."};
-  if (!r.win) return {cls:"tie", t:"Gleich tief!", s:"Beide Nadeln stecken in derselben Schicht – unentschieden."};
-  const wn=r.win===1 ? A : B, ln=r.win===1 ? B : A, lt=r.win===1 ? r.tb : r.ta;
-  if (r.win===me) return {cls:"win", t:"Die Runde geht an dich!", s:lt<0 ? `${ln} hat nichts gefunden.` : "Deine Nadel steckt tiefer."};
-  return {cls:"lose", t:`Die Runde geht an ${wn}.`, s:(r.win===1 ? r.tb : r.ta)<0 ? "Du hast diesmal nichts gefunden." : `Die Nadel von ${wn} steckt tiefer.`};
+  const P=d.players, mi=liveMeIdx(d), two=P.length===2;
+  if (two && r.per[0].dup) return {cls:"same", t:"Gleiche Antwort!", s:"Die zählt für keinen."};
+  if (!r.anyHit) return {cls:"none", t:"Keiner trifft.", s:"Diese Runde bleibt ohne Sieger."};
+  const dupNote=r.anyDup ? " Gleiche Antworten zählen nicht." : "";
+  if (r.win<0) return r.top<0 ? {cls:"same", t:"Alle gestrichen!", s:"Gleiche Antworten zählen für keinen."}
+    : {cls:"tie", t:"Gleich tief!", s:(two ? "Beide Nadeln stecken in derselben Schicht – unentschieden." : "Mehrere stecken gleich tief – niemand holt die Runde.")+dupNote};
+  const wn=esc(P[r.win].name);
+  if (r.win===mi) return {cls:"win", t:"Die Runde geht an dich!", s:(two ? (r.per[1-mi].t<0 ? `${esc(P[1-mi].name)} hat nichts gefunden.` : "Deine Nadel steckt tiefer.") : "Deine Nadel steckt am tiefsten.")+dupNote};
+  return {cls:"lose", t:`Die Runde geht an ${wn}.`, s:(two ? (mi>=0 && r.per[mi].t<0 ? "Du hast diesmal nichts gefunden." : `Die Nadel von ${wn} steckt tiefer.`) : `Die Nadel von ${wn} steckt am tiefsten.`)+dupNote};
 }
 const liveAnsHTML=(t, a)=>t>=0 && a ? `<q>${esc(a)}</q>` : `<span class="hint">keine Antwort</span>`;
+const LN_START=40, LN_CELL=40;
 function liveShow(d, v){
-  const L=live, i=v.i, Q=L.qs[i], o=liveRows(d, i+1), r=o.rows[i], role=d.role;
+  const L=live, i=v.i, Q=L.qs[i], P=d.players, two=P.length===2, o=lobbyOutcome(d, i+1), r=o.rows[i], mi=liveMeIdx(d);
   const animate=!REDUCED && !L.played[i] && liveNow()-v.revT<3500 && document.visibilityState!=="hidden";
   L.played[i]=true;
-  const cls=(k,t)=>animate ? "" : (t<0 ? " miss" : "")+(r.same ? " same" : (r.win===(k==="a"?1:2)) ? " won" : r.win ? " lost" : "");
-  const dig=(x,k,t,a,p)=>`<div class="dig lvdig${cls(k,t)}" id="lvdig_${k}">
-      <div class="digtop"><div class="lvdn">${avatarHTML(x.pid, x.name, "s")}<span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${role===k?`<span class="you">Du</span>`:""}</div><div class="dd right"><b id="lvpts_${k}">+${animate?0:p}</b></div></div>
+  const res=k=>{ const x=r.per[k]; return (x.t<0 ? " miss" : "")+(x.dup ? " same" : x.win ? " won" : (r.win>=0 && x.t>=0) ? " lost" : ""); };
+  let stage;
+  if (two){
+    stage=`<div class="duo" id="lvDuo">${P.map((x,k)=>{ const y=r.per[k]; return `<div class="dig lvdig${animate?"":res(k)}" id="lvdig_${k}">
+      <div class="digtop"><div class="lvdn">${avatarHTML(x.pid, x.name, "s")}<span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${x.me?`<span class="you">Du</span>`:""}</div><div class="dd right"><b id="lvpts_${k}">+${animate?0:y.pts}</b></div></div>
       <div class="shaft" id="lvshaft_${k}">
-        ${TIERS.map((x2,j)=>`<div class="band${!animate && j===t?" active":""}${!animate && j<t?" passed":""}" data-i="${j}" style="${tierVars(j)}">${tierIcon(j)}<span class="bn">${x2.name}</span><span class="bp">+${x2.pts}</span></div>`).join("")}
-        <div class="probe" id="lvprobe_${k}" style="top:${!animate && t>=0 ? (t+.5)*20 : 0}%">${PROBE_SVG}</div>
+        ${TIERS.map((x2,j)=>`<div class="band${!animate && j===y.t?" active":""}${!animate && j<y.t?" passed":""}" data-i="${j}" style="${tierVars(j)}">${tierIcon(j)}<span class="bn">${x2.name}</span><span class="bp">+${x2.pts}</span></div>`).join("")}
+        <div class="probe" id="lvprobe_${k}" style="top:${!animate && y.t>=0 ? (y.t+.5)*20 : 0}%">${PROBE_SVG}</div>
       </div>
-      <div class="lvans" id="lvans_${k}">${animate ? `<span class="hint">sinkt …</span>` : liveAnsHTML(t, a)}</div>
-    </div>`;
-  const vd=liveVerdict(d, r), myT=role==="a" ? r.ta : r.tb;
+      <div class="lvans" id="lvans_${k}">${animate ? `<span class="hint">sinkt …</span>` : liveAnsHTML(y.t, y.a)}</div>
+    </div>`; }).join("")}</div>`;
+  } else {
+    const pinTop=t=>t>=0 ? LN_START+(t+.5)*LN_CELL : LN_START/2;
+    stage=`<div class="lanes" id="lvDuo" style="--n:${P.length}">
+      <div class="lnleg" aria-hidden="true"><div class="lnstart"></div>${TIERS.map((x2,j)=>`<div class="lncell" style="${tierVars(j)}">${tierIcon(j)}<span>+${x2.pts}</span></div>`).join("")}</div>
+      ${P.map((x,k)=>{ const y=r.per[k]; return `<div class="ln${x.me?" me":""}${animate?"":res(k)}" id="lvdig_${k}"><div class="lntrack" id="lvshaft_${k}"><div class="lnstart"></div>${TIERS.map((_,j)=>`<i class="lncell${!animate && j===y.t?" active":""}" data-i="${j}" style="${tierVars(j)}"></i>`).join("")}<div class="lnpin" id="lvprobe_${k}" style="top:${animate ? LN_START/2 : pinTop(y.t)}px">${avatarHTML(x.pid, x.name, "s")}</div></div></div>`; }).join("")}
+    </div>
+    <ol class="lnlist">${P.map((x,k)=>{ const y=r.per[k]; return `<li class="lnrow${x.me?" me":""}${animate?"":res(k)}" id="lnrow_${k}">${avatarHTML(x.pid, x.name, "s")}<span class="lnn"><span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${x.me?`<span class="you">Du</span>`:""}</span><span class="lnans" id="lvans_${k}">${animate ? `<span class="hint">…</span>` : liveAnsHTML(y.t, y.a)}</span><b class="lnpts" id="lvpts_${k}">${animate ? "" : "+"+y.pts}</b></li>`; }).join("")}</ol>`;
+  }
+  const vd=liveVerdict(d, r), myT=mi>=0 ? r.per[mi].t : -1;
   const rare=rarerPicks(Q, myT, null).slice(0,3);
   view.innerHTML=`<section class="card stack playcard livecard">
-    ${liveBarHTML(d, animate ? liveRows(d, i) : o)}
+    ${liveBarHTML(d, animate ? lobbyOutcome(d, i) : o)}
     <div class="qhead">
       <span class="chip">${catIcon(Q.k)}${esc(Q.k)}</span>
       <span class="prog">Live-Duell · Auflösung ${i+1}/${ROUND_LEN}</span>
     </div>
     <div class="lvqt">${esc(Q.q)}</div>
-    <div class="duo" id="lvDuo">${dig(d.a,"a",r.ta,r.aa,r.pa)}${dig(d.b,"b",r.tb,r.ab,r.pb)}</div>
+    ${stage}
     <div class="lvverdict ${vd.cls}${animate?"":" show"}" id="lvVerdict" role="status"><b>${vd.t}</b><span>${vd.s}</span></div>
     <div class="lvnext"><div class="lvnbar"><i id="lvNbar"></i></div><span id="lvNtxt"></span></div>
-    <div class="stack lvrare" id="lvRare" style="gap:8px"${animate?" hidden":""}>${rare.length ? `<span class="label">${myT<0 ? "Das hätte Punkte gebracht" : "Noch seltener wären gewesen"}</span>${chipsHTML(rare)}` : `<p class="your"><b>Seltener geht’s nicht.</b> Du hast die Nadel gefunden.</p>`}</div>
+    <div class="stack lvrare" id="lvRare" style="gap:8px"${animate?" hidden":""}>${rare.length ? `<span class="label">${myT<0 ? "Das hätte Punkte gebracht" : "Noch seltener wären gewesen"}</span>${chipsHTML(rare)}` : myT===4 ? `<p class="your"><b>Seltener geht’s nicht.</b> Du hast die Nadel gefunden.</p>` : `<p class="your"><b>Seltener geht’s bei dieser Frage nicht.</b></p>`}</div>
     <p class="hint lvnet" id="lvNet" hidden>Verbindung unterbrochen – ich versuche es weiter …</p>
   </section>`;
   if (animate) liveRun(d, r, o);
@@ -3794,11 +4027,12 @@ function liveShow(d, v){
 async function liveRun(d, r, o){
   const L=live, tok={skip:false}; L.tok=tok;
   const alive=()=>live===L && L.tok===tok && state.screen==="live";
-  const role=d.role, SPEED=1/620;                       // Schichten pro Millisekunde – für beide Nadeln gleich
-  const sides=[["a", r.ta, r.aa], ["b", r.tb, r.ab]].map(([k,t,a])=>({k, t, a, target:t>=0 ? t+.5 : 0, landed:t<0, entered:-1,
-    dig:$("lvdig_"+k), shaft:$("lvshaft_"+k), probe:$("lvprobe_"+k), pts:$("lvpts_"+k), ans:$("lvans_"+k)}));
+  const P=d.players, two=P.length===2, mi=liveMeIdx(d), SPEED=1/620;                 // Schichten pro Millisekunde – für alle Nadeln gleich
+  const sides=P.map((x,k)=>{ const y=r.per[k]; return {k, t:y.t, a:y.a, per:y, landed:y.t<0, entered:-1,
+    target:two ? (y.t>=0 ? y.t+.5 : 0) : (y.t>=0 ? (LN_START/2)/LN_CELL+y.t+.5 : 0),
+    dig:$("lvdig_"+k), shaft:$("lvshaft_"+k), probe:$("lvprobe_"+k), pts:$("lvpts_"+k), ans:$("lvans_"+k), row:$("lnrow_"+k)}; });
   if (sides.some(s=>!s.dig || !s.shaft || !s.probe)) return;
-  sides.forEach(s=>{ s.bands=[...s.shaft.querySelectorAll(".band")]; if (s.t<0){ s.dig.classList.add("miss"); if (s.ans) s.ans.innerHTML=liveAnsHTML(-1, ""); } });
+  sides.forEach(s=>{ s.bands=[...s.shaft.querySelectorAll(two ? ".band" : ".lncell")]; if (s.t<0){ s.dig.classList.add("miss"); if (s.row) s.row.classList.add("miss"); if (s.ans) s.ans.innerHTML=liveAnsHTML(-1, ""); if (s.pts && !two) s.pts.textContent="+0"; } });
   await pause(550, tok);
   if (!alive()) return;
   const t0=performance.now();
@@ -3807,18 +4041,22 @@ async function liveRun(d, r, o){
     const el=tok.skip ? 1e9 : now-t0; let all=true, layer=-1, land=-1;
     for (const s of sides){
       if (s.t<0 || s.landed) continue;
-      const y=Math.min(s.target, el*SPEED), band=Math.min(4, Math.floor(y));
-      s.probe.style.top=(y*20)+"%";
-      if (y>0.02 && band>s.entered){
+      const y=Math.min(s.target, el*SPEED);
+      let band;
+      if (two){ s.probe.style.top=(y*20)+"%"; band=y>0.02 ? Math.min(4, Math.floor(y)) : -1; }
+      else { const px=LN_START/2+y*LN_CELL; s.probe.style.top=px+"px"; band=px>=LN_START ? Math.min(4, Math.floor((px-LN_START)/LN_CELL)) : -1; }
+      if (band>s.entered){
         s.entered=band;
         s.bands.forEach((b,j)=>{ b.classList.toggle("active", j===band); b.classList.toggle("passed", j<band); });
-        if (s.pts){ s.pts.textContent="+"+TIERS[band].pts; s.pts.classList.remove("bump"); void s.pts.offsetWidth; s.pts.classList.add("bump"); }
-        if (band>0 && !tok.skip) strawBurst(s.shaft, band, 8);
+        if (s.pts && two){ s.pts.textContent="+"+TIERS[band].pts; s.pts.classList.remove("bump"); void s.pts.offsetWidth; s.pts.classList.add("bump"); }
+        if (two && band>0 && !tok.skip) strawBurst(s.shaft, band, 8);
         layer=Math.max(layer, band);
       }
       if (y>=s.target){
         s.landed=true; s.dig.classList.add("landed");
         if (s.ans) s.ans.innerHTML=liveAnsHTML(s.t, s.a);
+        if (s.pts && !two) s.pts.textContent="+"+TIERS[s.t].pts;
+        if (s.row) s.row.classList.add("landed");
         land=Math.max(land, s.t);
       } else all=false;
     }
@@ -3829,31 +4067,27 @@ async function liveRun(d, r, o){
   if (!alive()) return;
   await pause(420, tok);
   if (!alive()) return;
-  const me=role==="a" ? 1 : 2, won=r.win===me;
-  sides.forEach(s=>{ const w=r.win===(s.k==="a"?1:2); s.dig.classList.add(r.same ? "same" : w ? "won" : r.win ? "lost" : "even"); });
-  if (r.same) sides.forEach(s=>{ if (s.pts) s.pts.textContent="+0"; });
+  const won=r.win>=0 && r.win===mi;
+  sides.forEach(s=>{ const c=s.per.dup ? "same" : s.per.win ? "won" : (r.win>=0 && s.t>=0) ? "lost" : "even"; s.dig.classList.add(c); if (s.row) s.row.classList.add(c); if (s.per.dup && s.pts) s.pts.textContent="+0"; });
   const vd=$("lvVerdict"); if (vd) vd.classList.add("show");
-  const rounds=$("lvRounds"); if (rounds){ rounds.textContent=o.wa+":"+o.wb; if (r.win){ rounds.classList.remove("bump"); void rounds.offsetWidth; rounds.classList.add("bump"); } }
+  if (two){ const rounds=$("lvRounds"); if (rounds){ rounds.textContent=o.tot[0].rounds+":"+o.tot[1].rounds; if (r.win>=0){ rounds.classList.remove("bump"); void rounds.offsetWidth; rounds.classList.add("bump"); } } }
+  else P.forEach((_,k)=>{ const el=$("lvr_"+k); if (el){ el.textContent=o.tot[k].rounds; if (k===r.win){ el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); } } });
   const rare=$("lvRare"); if (rare) rare.hidden=false;
   sfx(won ? "point" : "nopoint");
-  if (won){ buzz([20,40,60]); cheerCharms(); const mine=sides.find(s=>s.k===role); if (mine && mine.t>=3) confetti(mine.dig, mine.t===4 ? 60 : 28); }
+  if (won){ buzz([20,40,60]); cheerCharms(); const mine=sides[mi]; if (mine && mine.t>=3) confetti(mine.dig, mine.t===4 ? 60 : 28); }
   if (L.tok===tok) L.tok=null;
 }
 
 /* Uhr, Status und Countdown nachführen, ohne neu zu zeichnen */
 function liveDyn(v){
   const L=live, d=L && L.d; if (!d) return;
-  const now=liveNow(), role=d.role, ok=role==="a" ? "b" : "a", opp=d[ok];
+  const now=liveNow(), P=d.players, two=P.length===2, mi=liveMeIdx(d);
   const net=$("lvNet"); if (net) net.hidden=Date.now()-L.lastOk<4500;
   const st=(k, txt, cls)=>{ const el=$("lvst_"+k); if (!el) return; if (el.textContent!==txt) el.textContent=txt; el.className="lvst"+(cls ? " "+cls : ""); };
-  if (v.ph==="ready"){
-    ["a","b"].forEach(k=>{ const el=$("lvrs_"+k); if (el) el.textContent=(k===role || d[k].here) ? "bereit" : "gerade nicht da"; });
-    const sub=$("lvSub"); if (sub) sub.textContent=opp && opp.here ? "Gleich geht’s los …" : `${opp ? opp.name : "Dein Gegner"} hat die Seite gerade nicht offen. Es geht los, sobald ihr beide da seid.`;
-  } else if (v.ph==="count"){
+  if (v.ph==="count"){
     const n=Math.max(1, Math.ceil((v.q-now)/1000)), el=$("lvCount");
     if (el && el.textContent!==String(n)){ el.textContent=n; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
     if (L.cnt!==n){ L.cnt=n; sfx("tick"); }
-    const sub=$("lvSub"); if (sub && !sub.textContent) sub.textContent="Gleich kommt die erste Frage.";
   } else if (v.ph==="ask" || v.ph==="revwait"){
     const left=Math.max(0, v.end-now), mine=liveMine(v.i), sec=Math.ceil(left/1000);
     const ring=$("ring"), fg=$("rfg"), num=$("tnum");
@@ -3861,42 +4095,157 @@ function liveDyn(v){
     if (num) num.textContent=sec;
     if (ring){ ring.classList.toggle("low", !mine && left>0 && left<8000); ring.classList.toggle("frozen", left<=0); }
     if (!mine && left>0 && sec<=5 && sec!==L.tickSec){ L.tickSec=sec; sfx("tick"); }
-    const oa=!!opp && v.i===d.i && !!opp.answered;
-    if (oa && !L.oppAns[v.i]){ L.oppAns[v.i]=true; if (v.ph==="ask"){ sfx("opp"); const p=$("lvp_"+ok); if (p){ p.classList.remove("pulse"); void p.offsetWidth; p.classList.add("pulse"); } } }
-    const sm=!!(NARROW && NARROW.matches);                    // auf dem Handy ist neben dem Rundenstand wenig Platz
-    st(role, mine ? (mine.tier>=0 ? (sm ? "✓ steht" : "✓ Antwort steht") : mine.how==="pass" ? "gepasst" : (sm ? "–" : "keine Antwort")) : "du bist dran", mine && mine.tier>=0 ? "ok" : "");
-    st(ok, oa ? (sm ? "✓ fertig" : "✓ hat geantwortet") : !opp.here ? (sm ? "offline" : "nicht verbunden") : left<=0 ? (sm ? "–" : "keine Antwort") : "überlegt …", oa ? "ok" : !opp.here ? "off" : "");
-    const hurry=$("lvHurry"); if (hurry) hurry.hidden=!oa;
-    const w=$("lvWait"); if (w){ const txt=(v.ph==="revwait" || (oa && mine) || left<=0) ? "Gleich kommt die Auflösung …" : `Warte auf ${opp.name} … noch ${sec} s`; if (w.textContent!==txt) w.textContent=txt; }
+    const cur=v.i===d.i, sm=!!(NARROW && NARROW.matches);                    // auf dem Handy ist neben dem Rundenstand wenig Platz
+    let done=0, others=0;
+    P.forEach((p,k)=>{
+      if (k===mi){
+        if (two) st(k, mine ? (mine.tier>=0 ? (sm ? "✓ steht" : "✓ Antwort steht") : mine.how==="pass" ? "gepasst" : (sm ? "–" : "keine Antwort")) : "du bist dran", mine && mine.tier>=0 ? "ok" : "");
+        else st(k, mine ? (mine.tier>=0 ? "✓" : "–") : "…", mine && mine.tier>=0 ? "ok" : "");
+        return;
+      }
+      others++;
+      const oa=cur && !!p.answered; if (oa) done++;
+      if (two) st(k, oa ? (sm ? "✓ fertig" : "✓ hat geantwortet") : !p.here ? (sm ? "offline" : "nicht verbunden") : left<=0 ? (sm ? "–" : "keine Antwort") : "überlegt …", oa ? "ok" : !p.here ? "off" : "");
+      else st(k, oa ? "✓" : !p.here ? "×" : left<=0 ? "–" : "…", oa ? "ok" : !p.here ? "off" : "");
+      const chip=$("lvp_"+k); if (chip) chip.classList.toggle("off", !p.here && !oa);
+    });
+    if (done>(L.oppAns[v.i]||0)){ L.oppAns[v.i]=done; if (v.ph==="ask"){ sfx("opp"); if (two){ const p=$("lvp_"+(1-mi)); if (p){ p.classList.remove("pulse"); void p.offsetWidth; p.classList.add("pulse"); } } } }
+    const hurry=$("lvHurry"), ht=$("lvHurryTxt");
+    if (hurry){ hurry.hidden=done===0; if (ht && done>0){ const t=two ? `${P[1-mi].name} hat schon geantwortet!` : `${done} von ${others} Gegnern ${done===1?"hat":"haben"} schon geantwortet!`; if (ht.textContent!==t) ht.textContent=t; } }
+    const w=$("lvWait"); if (w){ const all=done>=others; const txt=(v.ph==="revwait" || all || left<=0) ? "Gleich kommt die Auflösung …" : two ? `Warte auf ${P[1-mi].name} … noch ${sec} s` : `${done} von ${others} Gegnern ${done===1?"hat":"haben"} geantwortet … noch ${sec} s`; if (w.textContent!==txt) w.textContent=txt; }
   } else if (v.ph==="reveal"){
     const left=Math.max(0, v.next-now), bar=$("lvNbar"), txt=$("lvNtxt");
     if (bar) bar.style.width=(100*left/d.reveal_ms).toFixed(1)+"%";
     if (txt){ const t=`${v.last ? "Endstand" : "Nächste Frage"} in ${Math.max(1, Math.ceil(left/1000))} s`; if (txt.textContent!==t) txt.textContent=t; }
-    st("a", "", ""); st("b", "", "");
+    P.forEach((_,k)=>st(k, "", ""));
   }
 }
 try{ document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState!=="hidden"){ liveTitle(null); if (live) liveKick(); } }); }catch(e){}
 
-/* Revanche nach einem Live-Duell */
+/* Endstand eines Spiels mit mehr als zwei Spielern (zu zweit zeigt die Duell-Ansicht das Ergebnis) */
+let resPoll=null;
+function stopResPoll(){ clearInterval(resPoll); resPoll=null; }
+function showLobbyResult(d){
+  stopResPoll();
+  state={screen:"lobbyres", code:d.code, data:d}; render();
+  if (!d.in) return;
+  let n=0;                                            // hat jemand eine neue Runde geöffnet?
+  resPoll=setInterval(async()=>{
+    if (state.screen!=="lobbyres" || state.code!==d.code || ++n>90){ stopResPoll(); return; }
+    try{
+      const x=await rpc("lobby_poll", {p_code:d.code, p_player:local.playerId, p_here:false});
+      if (x && state.screen==="lobbyres" && state.code===d.code && JSON.stringify(x.next||null)!==JSON.stringify(state.data.next||null)){ state.data.next=x.next||null; paintRematch(); }
+    }catch(e){}
+  }, 2500);
+}
+const resSeen=new Set();
+function renderLobbyResult(){
+  const d=state.data, P=d.players, o=lobbyOutcome(d, ROUND_LEN), mi=liveMeIdx(d);
+  const head=o.winner<0 ? "Unentschieden!" : o.winner===mi ? "Du gewinnst!" : `${esc(P[o.winner].name)} gewinnt!`;
+  const fresh=!REDUCED && !resSeen.has(d.code); resSeen.add(d.code);
+  sideOverride=null;
+  view.innerHTML=`<section class="card stack narrow duelcard" id="duelCardBox">
+    <span class="label">Live-Duell · ${P.length} Spieler</span>
+    <h2 id="duelHead"${fresh?' class="pop"':""}>${head}</h2>
+    <div id="rematchBox"></div>
+    <ol class="rank">${o.order.map(k=>{ const x=P[k]; return `<li class="rkrow${o.place[k]===1 && o.winner===k?" first":""}${k===mi?" me":""}" id="rk_${k}"><b class="rkpl">${o.place[k]}.</b>${avatarHTML(x.pid, x.name, "m")}<span class="rkn">${pidBtn(x.pid, x.name, "tagname")}${k===mi?`<span class="you">Du</span>`:""}</span><span class="rkst"><b>${o.tot[k].rounds}</b> ${o.tot[k].rounds===1?"Runde":"Runden"} · <b>${o.tot[k].pts}</b> Pkt.</span></li>`; }).join("")}</ol>
+    <ol class="drows mq" lang="de">${o.rows.map((r,j)=>`<li class="drow">
+      <div class="dq"><span>${j+1}.</span> ${esc(r.q)}</div>
+      <div class="mqa">${r.per.map((x,k)=>`<span class="mqi${x.win?" win":""}${x.dup?" same":""}${x.t<0?" miss":""}">${x.t>=0?miniHTML(x.t):`<span class="mini miss" aria-label="keine Punkte">–</span>`}<span class="mqn">${esc(P[k].name)}</span><span class="mqt">${x.t>=0 && x.a ? esc(x.a) : "keine Antwort"}</span></span>`).join("")}</div>
+      ${r.anyDup?`<div class="dnote">Gleiche Antworten zählen für keinen.</div>`:""}
+    </li>`).join("")}</ol>
+    ${d.in ? `<p class="fb bad" id="rmErr" role="alert" style="min-height:0"></p>` : ""}
+    <div class="row">
+      <button class="btn" id="duRematch" type="button">${d.in ? "Nochmal" : "Eigene Lobby öffnen"}</button>
+      <button class="btn ghost" id="freeGo" type="button">Classic spielen</button>
+      <button class="btn ghost small" id="menu3" type="button">Zum Start</button>
+    </div>
+  </section>`;
+  $("duRematch").onclick=d.in ? ()=>liveRematch(d.code) : ()=>{ state={screen:"duelnew"}; render(); };
+  $("freeGo").onclick=startRound;
+  $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
+  wirePidLinks(view);
+  loadAvatars(view);
+  if (d.in) paintRematch();
+  if (fresh){
+    const won=o.winner>=0 && o.winner===mi;
+    sfx(o.winner<0 ? "draw" : (won || mi<0) ? "win" : "lose");
+    const first=o.winner>=0 ? $("rk_"+o.winner) : null;
+    if (first && (won || mi<0)) confetti(first, 64);
+    buzz(won ? [30,40,80] : 20);
+  }
+}
+
+/* Ein laufendes Spiel, bei dem man nicht dabei ist: nur der Stand, das Ergebnis kommt am Ende von selbst. */
+function showLobbyWatch(d){
+  stopResPoll();
+  state={screen:"lobbywatch", code:d.code, data:d}; render();
+  resPoll=setInterval(async()=>{
+    if (state.screen!=="lobbywatch" || state.code!==d.code){ stopResPoll(); return; }
+    try{
+      const x=await rpc("lobby_poll", {p_code:d.code, p_player:local.playerId, p_here:false});
+      if (state.screen!=="lobbywatch" || state.code!==d.code) return;
+      if (!x){ stopResPoll(); state={screen:"duelerr", msg:"Dieses Spiel gibt es nicht mehr."}; render(); return; }
+      if (x.final && x.phase==="done") return showLobbyResult(x);
+      if (x.phase!==state.data.phase || x.i!==state.data.i){ state.data=x; render(); }
+    }catch(e){}
+  }, 4000);
+}
+function renderLobbyWatch(){
+  const d=state.data, P=d.players||[];
+  view.innerHTML=`<section class="card stack narrow">
+    <span class="label">Live-Duell · ${P.length} Spieler</span>
+    <h2>${d.kicked ? "Du bist bei diesem Spiel nicht dabei." : "Dieses Spiel läuft gerade."}</h2>
+    <div class="cntps">${P.map(p=>`<div class="cntp">${avatarHTML(p.pid, p.name, "l")}${pidBtn(p.pid, p.name, "tagname")}</div>`).join("")}</div>
+    <p class="lede" style="font-size:17px">${d.phase==="open" ? "Die Lobby ist noch offen." : `Frage ${Math.min(ROUND_LEN, (Number(d.i)||0)+1)} von ${ROUND_LEN}. Das Ergebnis erscheint hier, sobald das Spiel vorbei ist.`}</p>
+    <div class="row"><button class="btn" id="duNew" type="button">Eigene Lobby öffnen</button><button class="btn ghost small" id="menu3" type="button">Zum Start</button></div>
+  </section>`;
+  $("duNew").onclick=()=>{ state={screen:"duelnew"}; render(); };
+  $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
+  wirePidLinks(view);
+  loadAvatars(view);
+}
+
+/* Nochmal / Revanche: Der Erste öffnet eine neue Lobby, die anderen bekommen sie angeboten. */
 async function liveRematch(code){
-  const btn=$("duRematch"), err=$("rmErr");
+  const btn=$("duRematch"), err=$("rmErr"), scr=state.screen;
   if (btn){ if (btn.disabled) return; btn.disabled=true; }
   if ($("rmGo")) $("rmGo").disabled=true;
   if (err) err.textContent="";
   let r=null, e2=null;
-  try{ r=await rpc("live_rematch", {p_code:code, p_player:local.playerId, p_qids:pickDuelQs().map(qidOf)}); }catch(e){ e2=e; }
-  if (state.screen!=="duel" || state.code!==code) return;
+  try{ r=await rpc("lobby_again", {p_code:code, p_player:local.playerId, p_qids:pickDuelQs().map(qidOf)}); }catch(e){ e2=e; }
+  if (state.screen!==scr || state.code!==code) return;
+  if (e2 && e2.code==="not_found"){ state={screen:"duelnew"}; render(); return; }       // älteres Ergebnis ohne Lobby: einfach eine neue öffnen
   if (e2 || !r || !r.code){ if ($("duRematch")) $("duRematch").disabled=false; if ($("rmGo")) $("rmGo").disabled=false; if ($("rmErr")) $("rmErr").textContent=liveErr(e2); return; }
   openLive(r.code);
 }
 function paintRematch(){
   const box=$("rematchBox"), d=state.data; if (!box || !d) return;
-  const rm=d.rematch, mineToo=rm && rm.by_pid===myPid();
+  const rm=d.rematch || d.next, mineToo=rm && rm.by_pid===myPid();
   if (!rm || mineToo){ box.innerHTML=""; return; }
-  box.innerHTML=`<p class="note rmnote">${I_VS}<span><b>${esc(rm.by)}</b> will eine Revanche!</span><button class="btn small" id="rmGo" type="button">Annehmen</button></p>`;
+  const two=state.screen==="duel";
+  box.innerHTML=`<p class="note rmnote">${I_VS}<span><b>${esc(rm.by||"Jemand")}</b> ${two ? "will eine Revanche!" : "hat eine neue Runde geöffnet!"}</span><button class="btn small" id="rmGo" type="button">${two ? "Annehmen" : "Mitspielen"}</button></p>`;
   $("rmGo").onclick=()=>liveRematch(d.code);
-  const btn=$("duRematch"); if (btn) btn.textContent="Revanche annehmen";
+  const btn=$("duRematch"); if (btn) btn.textContent=two ? "Revanche annehmen" : "Mitspielen";
   sfx("up");
+}
+
+/* Öffentliche Lobbys (Liste auf der Duell-Seite) */
+let lobbyTimer=null, lobbyTok=0;
+function stopLobbyList(){ clearInterval(lobbyTimer); lobbyTimer=null; lobbyTok++; }
+async function loadLobbyList(){
+  const tok=lobbyTok, box=$("lbList"); if (!box) return;
+  let list=null, err=null;
+  try{ list=await rpc("lobby_list", {p_player:local.playerId}); }catch(e){ err=e; }
+  if (tok!==lobbyTok || state.screen!=="duelnew" || !$("lbList")) return;
+  if (err || !Array.isArray(list)){ $("lbList").innerHTML=`<p class="hint">${esc(err && err.status===404 ? liveErr(err) : "Die Liste konnte gerade nicht geladen werden.")}</p>`; return; }
+  const sig=JSON.stringify(list);
+  if ($("lbList").dataset.sig===sig) return;
+  $("lbList").dataset.sig=sig;
+  $("lbList").innerHTML=list.length ? `<ol class="lblist">${list.map(x=>`<li class="lbrow">${avatarHTML(x.host_pid, x.host, "m")}<span class="lbn"><span class="tagname"${nmAttr(x.host_pid)}>${esc(x.host)}</span><small>${Number(x.n)||1} von ${Number(x.cap)||2} Spielern</small></span><button class="btn small" type="button" data-room="${esc(x.room)}">Beitreten</button></li>`).join("")}</ol>`
+    : `<p class="hint lbempty">Gerade ist keine öffentliche Lobby offen. Öffne selbst eine – sie erscheint dann hier bei allen.</p>`;
+  $("lbList").querySelectorAll("[data-room]").forEach(b=>{ b.onclick=()=>{ if (!b.disabled){ b.disabled=true; joinRoom(b.dataset.room); } }; });
+  loadAvatars($("lbList"));
 }
 
 /* ======================= Spielerprofile & Match-Historie ======================= */
@@ -3916,12 +4265,14 @@ async function openProfile(pid){
   state={screen:"profload", pid:pid||null}; render();
   await dchain;
   let d=null, err=null;
+  const muP=rpc("lobby_stats", {p_pid:pid||null, p_player:local.playerId}).catch(()=>null);     // Mehrspieler-Runden (fehlt die Funktion noch, bleibt der Block weg)
   try{ d=await rpc("get_profile", {p_pid:pid||null, p_player:local.playerId}); }catch(e){ err=e; }
+  const multi=await muP;
   if (tok!==profTok || state.screen!=="profload") return;
   if (d && typeof d.pid==="string" && "avatar" in d) avSet(d.pid, d.avatar);
   if (d && typeof d.pid==="string" && "name_style" in d){ nsCache.set(d.pid, styleOk(d.name_style)); chCache.set(d.pid, [charmOk(d.charm_l), charmOk(d.charm_r)]); }
   if (d && d.me && account()) adoptMe(d, true);
-  state={screen:"profile", pid:pid||null, data:d, err}; render();
+  state={screen:"profile", pid:pid||null, data:d, err, multi}; render();
 }
 function renderProfLoad(){ view.innerHTML=`<section class="card stack narrow"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Profil wird geladen …</span></div></section>`; }
 function renderProfile(){
@@ -3934,6 +4285,7 @@ function renderProfile(){
     $("menu3").onclick=goStart; return;
   }
   const du=d.duels||{}, dy=d.daily||{}, fr=d.free||null;
+  const mu=state.multi && Number(state.multi.played)>0 ? state.multi : null;
   const n=v=>Number(v)||0;
   const played=n(du.played), wins=n(du.wins), losses=n(du.losses), draws=n(du.draws);
   const rw=n(du.rounds_won), rl=n(du.rounds_lost);
@@ -4006,6 +4358,9 @@ function renderProfile(){
           ${tile(n(dy.played), "gespielt")}${tile(dash(dy.avg), "Ø Punkte")}${tile(dash(dy.best), "Bestwert")}${tile(n(dy.wins), n(dy.wins)===1?"Tagessieg":"Tagessiege")}
         </div></div>
         <div><h3>Häufigste Gegner</h3>${rivalsHTML}</div>
+        ${mu?`<div><h3>Mehrspieler <small class="hint">· Lobbys ab 3 Spielern</small></h3><div class="ptiles small">
+          ${tile(n(mu.played), n(mu.played)===1?"Spiel":"Spiele")}${tile(n(mu.wins), n(mu.wins)===1?"Sieg":"Siege")}${tile(n(mu.top3), "Top 3")}
+        </div>${Array.isArray(mu.recent) && mu.recent.length ? `<div class="mulist">${mu.recent.map(m=>`<button class="chipbtn" type="button" data-mcode="${esc(m.code)}" title="${esc(fmtDay(m.t))}">${n(m.place)}. von ${n(m.n)} · ${n(m.pts)} Pkt.</button>`).join("")}</div>` : ""}</div>`:""}
         ${free?`<div><h3>Classic${fr?"":` <small class="hint">· auf diesem Gerät</small>`}</h3><div class="ptiles small">
           ${tile(free[0], "Runden")}${tile(free[1], "Bestwert")}${tile(free[2], "Nadeln")}
         </div></div>`:""}
@@ -4029,6 +4384,7 @@ function renderProfile(){
   if ($("profReg")) $("profReg").onclick=()=>openAuth({to:"profile"}, "register");
   if ($("logoutBtn")) $("logoutBtn").onclick=()=>{ if (confirm("Abmelden? Du kannst dich jederzeit wieder mit Name und Passwort anmelden.")) logout(); };
   if ($("duNew2")) $("duNew2").onclick=()=>{ state={screen:"duelnew"}; render(); };
+  view.querySelectorAll("[data-mcode]").forEach(b=>{ b.onclick=()=>openDuel(b.dataset.mcode); });
   view.querySelectorAll(".mopen").forEach(b=>{ b.onclick=()=>openDuel(b.dataset.code); });
   wirePidLinks(view);
   loadAvatars(view);
@@ -5104,6 +5460,8 @@ function render(){
   if (state.screen!=="board") stopBoard();
   if (state.screen!=="duel") stopDuelPoll();
   if (state.screen!=="live") liveStop();
+  if (state.screen!=="duelnew") stopLobbyList();
+  if (state.screen!=="lobbyres" && state.screen!=="lobbywatch") stopResPoll();
   setBest();
   if (state.screen!==lastScreen){
     lastScreen=state.screen;
@@ -5126,6 +5484,8 @@ function render(){
   if (state.screen==="duelinvite") return renderDuelInvite();
   if (state.screen==="duel") return renderDuel();
   if (state.screen==="live") return renderLive();
+  if (state.screen==="lobbyres") return renderLobbyResult();
+  if (state.screen==="lobbywatch") return renderLobbyWatch();
   if (state.screen==="profload") return renderProfLoad();
   if (state.screen==="profile") return renderProfile();
   if (state.screen==="auth") return renderAuth();
@@ -5544,7 +5904,7 @@ function afterHTML(Q, r){
     </div>
     ${note}
     ${r.rarer.length?`<div class="stack" style="gap:8px"><span class="label">Noch seltener wären gewesen</span>${chipsHTML(r.rarer)}</div>`
-      :`<p class="your"><b>Seltener geht’s nicht.</b> Du hast die Nadel gefunden.</p>`}
+      : r.tier===4 ? `<p class="your"><b>Seltener geht’s nicht.</b> Du hast die Nadel gefunden.</p>` : `<p class="your"><b>Seltener geht’s bei dieser Frage nicht.</b></p>`}
     ${nextBtn}`;
 }
 

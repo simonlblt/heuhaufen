@@ -1543,29 +1543,104 @@ grant execute on function public.equip_item(text, text, text) to anon, authentic
 grant execute on function public.get_looks(text[]) to anon, authenticated;
 
 -- ============================================================
--- Teil 8 · Live-Duell (Raum mit 4-stelligem Code, gemeinsame Uhr)
+-- Teil 8 · Live-Duell in Lobbys (2 bis 9 Spieler, privat oder öffentlich)
 -- ============================================================
--- Ablauf: Einer öffnet einen Raum (live_create) und bekommt einen 4-stelligen Code, der andere
--- tritt damit bei (live_join). Sobald beide die Seite offen haben, startet ein Countdown. Jede
--- Frage läuft für beide zur selben Zeit – die Uhr führt die Datenbank. Was der Gegner geantwortet
--- hat, gibt sie erst zur Auflösung heraus. Alle Übergänge (nächste Frage, Auflösung, Ende) werden
--- beim Abfragen aus den Zeitstempeln berechnet; es läuft kein Dienst im Hintergrund.
+-- Ablauf: Jemand öffnet eine Lobby (lobby_create) – privat (nur mit dem 4-stelligen Code oder Link)
+-- oder öffentlich (steht in der Liste, lobby_list) – und legt fest, gegen wie viele Leute gespielt
+-- wird (1 bis 8 Gegner). Der Gastgeber kann Spieler entfernen (lobby_kick) und startet das Spiel
+-- (lobby_start). Danach läuft jede Frage für alle zur selben Zeit; die Uhr führt die Datenbank.
+-- Was die anderen geantwortet haben, gibt sie erst zur Auflösung heraus. Alle Übergänge (Auflösung,
+-- nächste Frage, Ende) werden beim Abfragen aus den Zeitstempeln berechnet; es läuft kein Dienst im
+-- Hintergrund.
+-- Wertung: Antworten, die mehrere Spieler gleich gegeben haben, zählen für keinen von ihnen. Die Runde
+-- holt, wer als Einziger am tiefsten landet. Es gewinnt, wer die meisten Runden holt; bei Gleichstand
+-- zählen die Punkte. Ein Spiel zu zweit wird am Ende als Duell gespeichert (Statistik, Historie),
+-- ein Spiel mit mehr Leuten als Mehrspieler-Runde.
 
+-- Spalten für das Duell-Ergebnis (live = live gespielt). Die übrigen stammen aus der ersten Fassung
+-- des Live-Duells und werden nur noch zum Aufräumen gebraucht.
 alter table public.duels add column if not exists live        boolean not null default false;
 alter table public.duels add column if not exists room        text;
 alter table public.duels add column if not exists live_i      smallint not null default 0;
-alter table public.duels add column if not exists live_q_at   timestamptz;   -- Start der aktuellen Frage
-alter table public.duels add column if not exists live_rev_at timestamptz;   -- Start der Auflösung (leer: noch offen)
+alter table public.duels add column if not exists live_q_at   timestamptz;
+alter table public.duels add column if not exists live_rev_at timestamptz;
 alter table public.duels add column if not exists a_seen      timestamptz;
 alter table public.duels add column if not exists b_seen      timestamptz;
-alter table public.duels add column if not exists rematch     text;          -- Code der Revanche
-alter table public.duels drop constraint if exists duels_room_check;
-alter table public.duels add constraint duels_room_check check (room is null or room ~ '^[0-9]{4}$');
--- Der Raum-Code muss nur unter den noch nicht gestarteten Räumen eindeutig sein; danach ist er wieder frei.
-create unique index if not exists duels_room_idx on public.duels (room) where live and live_q_at is null;
+alter table public.duels add column if not exists rematch     text;
+drop index if exists public.duels_room_idx;
+
+-- Aufräumen nach der ersten Fassung (Live-Duell nur zu zweit, direkt in der Tabelle duels):
+-- nie gestartete Räume löschen, liegengebliebene Duelle zu Ende zählen, alte Funktionen entfernen.
+delete from public.duels d where d.live and d.live_q_at is null and d.a_status <> 'done';
+update public.duels d
+   set a_tiers   = d.a_tiers   || array(select (-1)::smallint from generate_series(1, 5 - cardinality(d.a_tiers))),
+       a_answers = d.a_answers || array(select ''::text from generate_series(1, 5 - cardinality(d.a_answers))),
+       b_tiers   = d.b_tiers   || array(select (-1)::smallint from generate_series(1, 5 - cardinality(d.b_tiers))),
+       b_answers = d.b_answers || array(select ''::text from generate_series(1, 5 - cardinality(d.b_answers))),
+       a_status = 'done', b_status = 'done',
+       a_done_at = coalesce(d.a_done_at, now()), b_done_at = coalesce(d.b_done_at, now())
+ where d.live and d.live_q_at is not null and d.b_player is not null
+   and (d.a_status <> 'done' or coalesce(d.b_status, '') <> 'done')
+   and d.live_q_at < now() - interval '10 minutes';
+drop function if exists public.live_create(text, text[]);
+drop function if exists public.live_join(text, text);
+drop function if exists public.live_leave(text, text);
+drop function if exists public.live_poll(text, text);
+drop function if exists public.live_poll(text, text, boolean);
+drop function if exists public.live_answer(text, text, integer, smallint, text);
+drop function if exists public.live_rematch(text, text, text[]);
+drop function if exists public.hh_live_sweep();
+drop function if exists public.hh_live_tick(text, text);
+drop function if exists public.hh_live_tick(text, text, boolean);
+drop function if exists public.hh_live_json(public.duels, text);
+drop function if exists public.hh_live_ms(text);
+
+-- Eine Lobby und danach das Spiel darin.
+create table if not exists public.lobbies (
+  code        text primary key check (code ~ '^[A-Z2-9]{5}$'),
+  room        text not null check (room ~ '^[0-9]{4}$'),      -- 4-stelliger Code zum Beitreten
+  created_at  timestamptz not null default now(),
+  host        text not null,
+  is_public   boolean not null default false,
+  cap         smallint not null check (cap between 2 and 9),  -- Plätze insgesamt (Gastgeber + Gegner)
+  qids        text[] not null check (array_length(qids, 1) = 5),
+  kicked      text[] not null default '{}',
+  q_i         smallint not null default 0,                    -- aktuelle Frage (0 bis 4)
+  q_at        timestamptz,                                    -- Start der aktuellen Frage (leer: Lobby noch offen)
+  rev_at      timestamptz,                                    -- Start der Auflösung (leer: noch offen)
+  done        boolean not null default false,
+  done_at     timestamptz,
+  n           smallint,                                       -- Zahl der Spieler am Ende
+  next_code   text                                            -- Lobby der nächsten Runde ("Nochmal")
+);
+-- Der Raum-Code muss nur unter den offenen Lobbys eindeutig sein; nach dem Start ist er wieder frei.
+create unique index if not exists lobbies_room_idx on public.lobbies (room) where q_at is null;
+create index if not exists lobbies_host_idx on public.lobbies (host, created_at);
+
+create table if not exists public.lobby_players (
+  code       text not null references public.lobbies (code) on delete cascade,
+  player     text not null,
+  pos        integer not null default 0,                      -- Reihenfolge des Beitritts
+  joined_at  timestamptz not null default now(),
+  seen       timestamptz,
+  tiers      smallint[] not null default '{}',
+  answers    text[] not null default '{}',
+  score      integer not null default 0,
+  rounds     integer,                                         -- ab hier: Ergebnis, am Ende eingetragen
+  pts        integer,
+  place      integer,
+  won        boolean,
+  primary key (code, player)
+);
+create index if not exists lobby_players_player_idx on public.lobby_players (player);
+
+alter table public.lobbies enable row level security;
+alter table public.lobby_players enable row level security;
+revoke all on table public.lobbies from anon, authenticated;
+revoke all on table public.lobby_players from anon, authenticated;
 
 -- Zeiten in Millisekunden: Countdown, Antwortzeit, Nachlauf fürs Netz, Vorlauf zur Auflösung, Dauer der Auflösung.
-create or replace function public.hh_live_ms(p_what text)
+create or replace function public.hh_lobby_ms(p_what text)
 returns integer
 language sql immutable
 as $$
@@ -1573,150 +1648,251 @@ as $$
                      when 'lead' then 1200 when 'reveal' then 10000 end
 $$;
 
--- Die Uhr: sperrt das Duell, merkt sich die Anwesenheit des Abfragenden und stellt den Stand
--- auf die aktuelle Zeit vor (Start, Auflösung, nächste Frage, Ende).
-create or replace function public.hh_live_tick(p_code text, p_player text, p_here boolean)
-returns public.duels
+-- Wertung eines Spiels: Runden, Punkte, Platz.
+create or replace function public.hh_lobby_rank(p_code text)
+returns table (player text, rounds integer, pts integer, place integer, won boolean)
+language sql stable security definer set search_path = public
+as $$
+  with a as (       -- eine Zeile je Spieler und Frage
+    select p.player, i, coalesce(p.tiers[i], -1) as t, lower(coalesce(p.answers[i], '')) as ans
+      from public.lobby_players p cross join generate_series(1, 5) i
+     where p.code = p_code
+  ), v as (         -- gleiche Antworten zählen für keinen
+    select a.*,
+           case when a.t >= 0 and a.ans <> ''
+                 and count(*) filter (where a.t >= 0 and a.ans <> '') over (partition by a.i, a.ans) > 1
+                then -1 else a.t end as vt
+      from a
+  ), r as (         -- je Frage: die tiefste gültige Stufe – und wie viele dort gelandet sind
+    select v.*, max(v.vt) over (partition by v.i) as top,
+           count(*) over (partition by v.i, v.vt) as same_depth
+      from v
+  ), s as (
+    select r.player,
+           sum(case when r.vt >= 0 and r.vt = r.top and r.same_depth = 1 then 1 else 0 end)::integer as rounds,
+           sum(case when r.vt >= 0 then (array[10, 30, 55, 80, 100])[r.vt + 1] else 0 end)::integer as pts
+      from r group by r.player
+  ), z as (
+    select s.*, rank() over (order by s.rounds desc, s.pts desc)::integer as place from s
+  )
+  select z.player, z.rounds, z.pts, z.place,
+         (z.place = 1 and (select count(*) from z z2 where z2.place = 1) = 1) as won
+    from z;
+$$;
+
+-- Spielende: Ergebnis eintragen. Zu zweit wird daraus ein Duell (mit Statistik und Historie wie bisher),
+-- bei mehr Spielern gibt es die XP direkt aufs Konto (Punkte, dazu 100 für den Sieg – wie beim Duell).
+create or replace function public.hh_lobby_finish(p_code text)
+returns void
 language plpgsql security definer set search_path = public
 as $$
 declare
-  d        public.duels;
-  v_ask    interval := make_interval(secs => (public.hh_live_ms('ask') + public.hh_live_ms('grace')) / 1000.0);
-  v_reveal interval := make_interval(secs => public.hh_live_ms('reveal') / 1000.0);
-  v_count  interval := make_interval(secs => public.hh_live_ms('count') / 1000.0);
-  v_role   text;
-  v_touch  boolean := false;
+  l      public.lobbies;
+  a      public.lobby_players;
+  b      public.lobby_players;
+  v_n    integer;
+  v_an   text;
+  v_bn   text;
 begin
-  select * into d from public.duels x where x.code = upper(p_code) for update;
-  if not found or not d.live then
-    return d;
-  end if;
-  v_role := case when p_player is null then null
-                 when d.a_player = p_player then 'a'
-                 when d.b_player is not null and d.b_player = p_player then 'b' end;
-
-  -- Anwesenheit: vor dem Start bei jeder Abfrage, im Spiel höchstens alle 2,5 Sekunden.
-  -- p_here ist falsch, solange die Seite vor dem Start nur im Hintergrund offen ist.
-  if coalesce(p_here, true) then
-    if v_role = 'a' and (d.live_q_at is null or d.a_seen is null or d.a_seen < now() - interval '2.5 seconds') then
-      d.a_seen := now(); v_touch := true;
-    elsif v_role = 'b' and (d.live_q_at is null or d.b_seen is null or d.b_seen < now() - interval '2.5 seconds') then
-      d.b_seen := now(); v_touch := true;
+  select * into l from public.lobbies x where x.code = p_code;
+  select count(*) into v_n from public.lobby_players p where p.code = p_code;
+  update public.lobbies x set n = v_n where x.code = p_code;
+  update public.lobby_players p
+     set rounds = r.rounds, pts = r.pts, place = r.place, won = r.won
+    from public.hh_lobby_rank(p_code) r
+   where p.code = p_code and p.player = r.player;
+  if v_n = 2 then
+    select * into a from public.lobby_players p where p.code = p_code order by p.pos, p.joined_at, p.player limit 1;
+    select * into b from public.lobby_players p where p.code = p_code and p.player <> a.player limit 1;
+    select k.name into v_an from public.accounts k where k.player_id = a.player;
+    select k.name into v_bn from public.accounts k where k.player_id = b.player;
+    if v_an is not null and v_bn is not null then
+      insert into public.duels (code, created_at, qids, live,
+                                a_player, a_name, a_tiers, a_answers, a_score, a_status, a_done_at,
+                                b_player, b_secret, b_name, b_tiers, b_answers, b_score, b_status, b_done_at)
+      values (l.code, l.created_at, l.qids, true,
+              a.player, v_an, a.tiers, a.answers, a.score, 'done', coalesce(l.done_at, now()),
+              b.player, gen_random_uuid(), v_bn, b.tiers, b.answers, b.score, 'done', coalesce(l.done_at, now()))
+      on conflict (code) do nothing;
+      return;
     end if;
   end if;
-
-  if d.live_q_at is null then
-    -- Start: sobald beide im Raum sind und die Seite vor sich haben.
-    if d.b_player is not null and d.a_seen > now() - interval '4 seconds' and d.b_seen > now() - interval '4 seconds' then
-      d.live_i := 0; d.live_q_at := now() + v_count; d.live_rev_at := null; v_touch := true;
-    end if;
-  else
-    loop
-      exit when d.a_status = 'done' or now() < d.live_q_at;
-      if d.live_rev_at is null then
-        exit when now() < d.live_q_at + v_ask;
-        d.live_rev_at := d.live_q_at + v_ask; v_touch := true;       -- Zeit um
-      end if;
-      exit when now() < d.live_rev_at;
-      -- Die Auflösung läuft: Wer nicht geantwortet hat, bekommt "keine Antwort".
-      while cardinality(d.a_tiers) < d.live_i + 1 loop
-        d.a_tiers := d.a_tiers || (-1)::smallint; d.a_answers := d.a_answers || ''::text; v_touch := true;
-      end loop;
-      while cardinality(d.b_tiers) < d.live_i + 1 loop
-        d.b_tiers := d.b_tiers || (-1)::smallint; d.b_answers := d.b_answers || ''::text; v_touch := true;
-      end loop;
-      if d.live_i >= 4 then
-        d.a_status := 'done'; d.b_status := 'done'; d.a_done_at := d.live_rev_at; d.b_done_at := d.live_rev_at; v_touch := true;
-        exit;
-      end if;
-      exit when now() < d.live_rev_at + v_reveal;
-      d.live_i := d.live_i + 1; d.live_q_at := d.live_rev_at + v_reveal; d.live_rev_at := null; v_touch := true;
-    end loop;
-  end if;
-
-  if v_touch then
-    update public.duels x
-       set a_seen = d.a_seen, b_seen = d.b_seen, live_i = d.live_i, live_q_at = d.live_q_at, live_rev_at = d.live_rev_at,
-           a_tiers = d.a_tiers, a_answers = d.a_answers, b_tiers = d.b_tiers, b_answers = d.b_answers,
-           a_status = d.a_status, b_status = d.b_status, a_done_at = d.a_done_at, b_done_at = d.b_done_at
-     where x.code = d.code;
-  end if;
-  return d;
+  update public.accounts k
+     set free_xp = k.free_xp + p.score + case when p.won then 100 else 0 end
+    from public.lobby_players p
+   where p.code = p_code and k.player_id = p.player;
 end;
 $$;
 
--- Der Stand eines Live-Duells, wie ihn ein Spieler sehen darf: die eigenen Antworten immer,
--- die des Gegners erst ab der Auflösung der jeweiligen Frage.
-create or replace function public.hh_live_json(d public.duels, p_player text)
-returns json
-language plpgsql stable set search_path = public
+-- Die Uhr: sperrt die Lobby, merkt sich die Anwesenheit des Abfragenden und stellt den Stand auf die
+-- aktuelle Zeit vor (Auflösung, nächste Frage, Ende). p_here ist falsch, solange die Seite vor dem
+-- Start nur im Hintergrund offen ist.
+create or replace function public.hh_lobby_tick(p_code text, p_player text, p_here boolean)
+returns public.lobbies
+language plpgsql security definer set search_path = public
 as $$
 declare
-  v_role   text := case when d.a_player = p_player then 'a'
-                        when d.b_player is not null and d.b_player = p_player then 'b' end;
-  v_reveal interval := make_interval(secs => public.hh_live_ms('reveal') / 1000.0);
-  v_away   interval := case when d.live_q_at is null then interval '4 seconds' else interval '8 seconds' end;
+  l        public.lobbies;
+  v_ask    interval := make_interval(secs => (public.hh_lobby_ms('ask') + public.hh_lobby_ms('grace')) / 1000.0);
+  v_reveal interval := make_interval(secs => public.hh_lobby_ms('reveal') / 1000.0);
+  v_lead   interval := make_interval(secs => public.hh_lobby_ms('lead') / 1000.0);
+  v_touch  boolean := false;
+begin
+  select * into l from public.lobbies x where x.code = upper(p_code) for update;
+  if not found then
+    return l;
+  end if;
+  if p_player is not null and coalesce(p_here, true) then
+    update public.lobby_players p set seen = now()
+     where p.code = l.code and p.player = p_player
+       and (l.q_at is null or p.seen is null or p.seen < now() - interval '2.5 seconds');
+  end if;
+  if l.q_at is null then
+    -- Offene Lobby: Wer die Seite länger nicht offen hatte, macht seinen Platz frei (der Gastgeber bleibt).
+    delete from public.lobby_players p
+     where p.code = l.code and p.player <> l.host and coalesce(p.seen, p.joined_at) < now() - interval '30 seconds';
+    return l;
+  end if;
+  loop
+    exit when l.done or now() < l.q_at;
+    if l.rev_at is null then
+      if now() >= l.q_at + v_ask then
+        l.rev_at := l.q_at + v_ask; v_touch := true;                       -- Zeit um
+      elsif (select count(*) > 0 and count(*) filter (where cardinality(p.tiers) <= l.q_i) = 0
+               from public.lobby_players p
+              where p.code = l.code and p.seen > now() - interval '8 seconds') then
+        l.rev_at := now() + v_lead; v_touch := true;                       -- alle, die da sind, haben geantwortet
+      else
+        exit;
+      end if;
+    end if;
+    exit when now() < l.rev_at;
+    -- Die Auflösung läuft: Wer nicht geantwortet hat, bekommt "keine Antwort".
+    update public.lobby_players p
+       set tiers   = p.tiers   || array(select (-1)::smallint from generate_series(1, l.q_i + 1 - cardinality(p.tiers))),
+           answers = p.answers || array(select ''::text from generate_series(1, l.q_i + 1 - cardinality(p.answers)))
+     where p.code = l.code and (cardinality(p.tiers) < l.q_i + 1 or cardinality(p.answers) < l.q_i + 1);
+    if l.q_i >= 4 then
+      l.done := true; l.done_at := l.rev_at; v_touch := true;
+      update public.lobbies x set done = true, done_at = l.done_at, rev_at = l.rev_at where x.code = l.code;
+      perform public.hh_lobby_finish(l.code);
+      exit;
+    end if;
+    exit when now() < l.rev_at + v_reveal;
+    l.q_i := l.q_i + 1; l.q_at := l.rev_at + v_reveal; l.rev_at := null; v_touch := true;
+  end loop;
+  if v_touch then
+    update public.lobbies x
+       set q_i = l.q_i, q_at = l.q_at, rev_at = l.rev_at, done = l.done, done_at = l.done_at
+     where x.code = l.code;
+  end if;
+  return l;
+end;
+$$;
+
+-- Der Stand, wie ihn ein Spieler sehen darf: die eigenen Antworten immer, die der anderen erst ab der
+-- Auflösung der jeweiligen Frage.
+create or replace function public.hh_lobby_json(l public.lobbies, p_player text)
+returns json
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  v_reveal interval := make_interval(secs => public.hh_lobby_ms('reveal') / 1000.0);
+  v_away   interval := case when l.q_at is null then interval '5 seconds' else interval '8 seconds' end;
   v_phase  text;
   v_open   integer;
 begin
   v_phase := case
-    when d.b_player is null then 'wait'
-    when d.live_q_at is null then 'ready'
-    when now() < d.live_q_at then 'count'
-    when d.a_status = 'done' and now() >= d.live_rev_at + v_reveal then 'done'
-    when d.live_rev_at is not null and now() >= d.live_rev_at then 'reveal'
+    when l.q_at is null then 'open'
+    when now() < l.q_at then 'count'
+    when l.done and now() >= l.rev_at + v_reveal then 'done'
+    when l.rev_at is not null and now() >= l.rev_at then 'reveal'
     else 'ask' end;
-  v_open := case when v_phase in ('wait', 'ready', 'count') then 0
-                 when v_phase = 'ask' then d.live_i
+  v_open := case when v_phase in ('open', 'count') then 0
+                 when v_phase = 'ask' then l.q_i
                  when v_phase = 'done' then 5
-                 else d.live_i + 1 end;
+                 else l.q_i + 1 end;
   return json_build_object(
-    'code', d.code, 'room', d.room, 'live', true, 'role', v_role, 'phase', v_phase, 'i', d.live_i, 'open', v_open,
+    'code', l.code, 'room', l.room, 'public', l.is_public, 'cap', l.cap,
+    'phase', v_phase, 'i', l.q_i, 'open', v_open, 'final', l.done,
+    'in', exists (select 1 from public.lobby_players p where p.code = l.code and p.player = p_player),
+    'host', l.host = p_player,
+    'kicked', coalesce(p_player = any(l.kicked), false),
     'now',    (extract(epoch from now()) * 1000)::bigint,
-    'q_at',   (extract(epoch from d.live_q_at) * 1000)::bigint,
-    'rev_at', (extract(epoch from d.live_rev_at) * 1000)::bigint,
-    'count_ms', public.hh_live_ms('count'), 'ask_ms', public.hh_live_ms('ask'), 'grace_ms', public.hh_live_ms('grace'),
-    'reveal_ms', public.hh_live_ms('reveal'),
-    'qids', d.qids,
-    'final', d.a_status = 'done' and coalesce(d.b_status, '') = 'done',
-    'a', json_build_object(
-      'name', d.a_name, 'pid', public.hh_pid(d.a_player),
-      'here', coalesce(d.a_seen > now() - v_away, false),
-      'answered', cardinality(d.a_tiers) > d.live_i,
-      'tiers',   to_json(case when v_role = 'a' then d.a_tiers   else d.a_tiers[1:v_open] end),
-      'answers', to_json(case when v_role = 'a' then d.a_answers else d.a_answers[1:v_open] end)),
-    'b', case when d.b_player is null then null else json_build_object(
-      'name', d.b_name, 'pid', public.hh_pid(d.b_player),
-      'here', coalesce(d.b_seen > now() - v_away, false),
-      'answered', cardinality(d.b_tiers) > d.live_i,
-      'tiers',   to_json(case when v_role = 'b' then d.b_tiers   else d.b_tiers[1:v_open] end),
-      'answers', to_json(case when v_role = 'b' then d.b_answers else d.b_answers[1:v_open] end)) end
+    'q_at',   (extract(epoch from l.q_at) * 1000)::bigint,
+    'rev_at', (extract(epoch from l.rev_at) * 1000)::bigint,
+    'count_ms', public.hh_lobby_ms('count'), 'ask_ms', public.hh_lobby_ms('ask'),
+    'grace_ms', public.hh_lobby_ms('grace'), 'reveal_ms', public.hh_lobby_ms('reveal'),
+    'qids', l.qids,
+    'players', (select coalesce(json_agg(json_build_object(
+          'pid', public.hh_pid(p.player), 'name', coalesce(k.name, '???'),
+          'host', p.player = l.host, 'me', p.player = p_player,
+          'here', coalesce(p.seen > now() - v_away, false),
+          'answered', cardinality(p.tiers) > l.q_i,
+          'tiers',   to_json(case when p.player = p_player then p.tiers   else p.tiers[1:v_open] end),
+          'answers', to_json(case when p.player = p_player then p.answers else p.answers[1:v_open] end)
+        ) order by p.pos, p.joined_at, p.player), '[]'::json)
+        from public.lobby_players p left join public.accounts k on k.player_id = p.player
+       where p.code = l.code),
+    'next', (select json_build_object('code', n.code, 'room', n.room, 'by_pid', public.hh_pid(n.host),
+                                      'by', (select k.name from public.accounts k where k.player_id = n.host))
+               from public.lobbies n where n.code = l.next_code and n.q_at is null)
   );
 end;
 $$;
 
--- Aufräumen: verlassene Räume löschen, liegengebliebene Duelle zu Ende zählen.
-create or replace function public.hh_live_sweep()
+-- Einen Spieler aus einer offenen Lobby nehmen. Geht der Gastgeber, übernimmt der Nächste; ist niemand
+-- mehr da, wird die Lobby gelöscht.
+create or replace function public.hh_lobby_drop(p_code text, p_player text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  l      public.lobbies;
+  v_next text;
+begin
+  select * into l from public.lobbies x where x.code = p_code and x.q_at is null for update;
+  if not found then
+    return;
+  end if;
+  delete from public.lobby_players p where p.code = l.code and p.player = p_player;
+  if l.host = p_player then
+    select p.player into v_next from public.lobby_players p
+     where p.code = l.code order by p.pos, p.joined_at, p.player limit 1;
+    if v_next is null then
+      delete from public.lobbies x where x.code = l.code;
+    else
+      update public.lobbies x set host = v_next where x.code = l.code;
+    end if;
+  end if;
+end;
+$$;
+
+-- Aufräumen: verlassene Lobbys löschen, liegengebliebene Spiele zu Ende zählen.
+create or replace function public.hh_lobby_sweep()
 returns void
 language plpgsql security definer set search_path = public
 as $$
 declare
   v_code text;
 begin
-  delete from public.duels d
-   where d.live and d.live_q_at is null and coalesce(d.a_seen, d.created_at) < now() - interval '30 minutes';
+  delete from public.lobbies l
+   where l.q_at is null
+     and coalesce((select p.seen from public.lobby_players p where p.code = l.code and p.player = l.host), l.created_at)
+         < now() - interval '30 minutes';
   for v_code in
-    select d.code from public.duels d
-     where d.live and d.live_q_at is not null and d.a_status <> 'done' and d.live_q_at < now() - interval '50 seconds'
-     order by d.code
+    select l.code from public.lobbies l
+     where l.q_at is not null and not l.done and l.q_at < now() - interval '50 seconds'
+     order by l.code
   loop
-    perform public.hh_live_tick(v_code, null, false);
+    perform public.hh_lobby_tick(v_code, null, false);
   end loop;
 end;
 $$;
 
--- Raum öffnen. Die 5 Fragen lost die Seite aus; zurück kommen der Duell-Code und der 4-stellige Raum-Code.
-create or replace function public.live_create(p_player text, p_qids text[])
+-- Lobby öffnen: privat oder öffentlich, mit p_cap Plätzen insgesamt (2 bis 9). Die 5 Fragen lost die
+-- Seite aus; zurück kommen der Spiel-Code und der 4-stellige Raum-Code.
+create or replace function public.lobby_create(p_player text, p_qids text[], p_public boolean, p_cap integer)
 returns json
 language plpgsql security definer set search_path = public
 as $$
@@ -1726,13 +1902,12 @@ declare
   v_room  text;
   v_try   integer := 0;
   v_q     text;
-  v_name  text;
+  v_old   text;
 begin
   if p_player is null or char_length(p_player) not between 8 and 64 then
     raise exception 'bad_player';
   end if;
-  select k.name into v_name from public.accounts k where k.player_id = p_player;
-  if v_name is null then
+  if not exists (select 1 from public.accounts k where k.player_id = p_player) then
     raise exception 'need_account';
   end if;
   if p_qids is null or coalesce(array_length(p_qids, 1), 0) <> 5 then
@@ -1743,10 +1918,16 @@ begin
       raise exception 'bad_questions';
     end if;
   end loop;
-  perform public.hh_live_sweep();
-  -- Je Spieler nur ein offener Raum: ein älterer, noch nicht gestarteter wird geschlossen.
-  delete from public.duels d where d.live and d.live_q_at is null and d.a_player = p_player;
-  if (select count(*) from public.duels d where d.a_player = p_player and d.created_at > now() - interval '1 day') >= 60 then
+  if p_cap is null or p_cap < 2 or p_cap > 9 then
+    raise exception 'bad_cap';
+  end if;
+  perform public.hh_lobby_sweep();
+  -- Man kann nur in einer offenen Lobby zugleich sein.
+  for v_old in select p.code from public.lobby_players p join public.lobbies x on x.code = p.code
+                where p.player = p_player and x.q_at is null order by p.code loop
+    perform public.hh_lobby_drop(v_old, p_player);
+  end loop;
+  if (select count(*) from public.lobbies x where x.host = p_player and x.created_at > now() - interval '1 day') >= 100 then
     raise exception 'too_many';
   end if;
   loop
@@ -1755,120 +1936,178 @@ begin
       v_code := v_code || substr(v_alpha, 1 + floor(random() * length(v_alpha))::int, 1);
     end loop;
     v_room := (1000 + floor(random() * 9000)::int)::text;
-    begin
-      insert into public.duels (code, qids, a_player, a_name, live, room, a_seen)
-      values (v_code, p_qids, p_player, v_name, true, v_room, now());
-      return json_build_object('code', v_code, 'room', v_room);
-    exception when unique_violation then
-      v_try := v_try + 1;
-      if v_try > 30 then
-        raise exception 'no_code';
-      end if;
-    end;
+    if not exists (select 1 from public.duels d where d.code = v_code) then
+      begin
+        insert into public.lobbies (code, room, host, is_public, cap, qids)
+        values (v_code, v_room, p_player, coalesce(p_public, false), p_cap, p_qids);
+        insert into public.lobby_players (code, player, pos, seen) values (v_code, p_player, 0, now());
+        return json_build_object('code', v_code, 'room', v_room);
+      exception when unique_violation then
+        null;
+      end;
+    end if;
+    v_try := v_try + 1;
+    if v_try > 40 then
+      raise exception 'no_code';
+    end if;
   end loop;
 end;
 $$;
 
--- Raum betreten (mit dem 4-stelligen Code). Zurück kommt der Duell-Code.
-create or replace function public.live_join(p_player text, p_room text)
+-- Lobby betreten (mit dem 4-stelligen Code). Zurück kommt der Spiel-Code.
+create or replace function public.lobby_join(p_player text, p_room text)
 returns json
 language plpgsql security definer set search_path = public
 as $$
 declare
-  d      public.duels;
-  v_name text;
+  l     public.lobbies;
+  v_old text;
 begin
   if p_player is null or char_length(p_player) not between 8 and 64 then
     raise exception 'bad_player';
   end if;
-  select k.name into v_name from public.accounts k where k.player_id = p_player;
-  if v_name is null then
+  if not exists (select 1 from public.accounts k where k.player_id = p_player) then
     raise exception 'need_account';
   end if;
   if p_room is null or p_room !~ '^[0-9]{4}$' then
     raise exception 'not_found';
   end if;
-  perform public.hh_live_sweep();
-  select * into d from public.duels x where x.live and x.room = p_room and x.live_q_at is null for update;
+  perform public.hh_lobby_sweep();
+  select * into l from public.lobbies x where x.room = p_room and x.q_at is null for update;
   if not found then
-    -- Läuft das Duell mit diesem Code schon und ich bin dabei? Dann einfach wieder hinein.
-    select * into d from public.duels x
-     where x.live and x.room = p_room and x.a_status <> 'done' and (x.a_player = p_player or x.b_player = p_player)
+    -- Läuft das Spiel mit diesem Code schon und ich bin dabei? Dann einfach wieder hinein.
+    select x.* into l from public.lobbies x join public.lobby_players p on p.code = x.code
+     where x.room = p_room and not x.done and p.player = p_player
      order by x.created_at desc limit 1;
     if found then
-      return json_build_object('code', d.code);
+      return json_build_object('code', l.code);
     end if;
     raise exception 'not_found';
   end if;
-  if d.a_player = p_player or (d.b_player is not null and d.b_player = p_player) then
-    return json_build_object('code', d.code);
+  if p_player = any(l.kicked) then
+    raise exception 'kicked';
   end if;
-  -- Besetzt ist der Platz nur, solange der andere Gast die Seite noch offen hat.
-  if d.b_player is not null and d.b_seen > now() - interval '15 seconds' then
-    raise exception 'taken';
+  if exists (select 1 from public.lobby_players p where p.code = l.code and p.player = p_player) then
+    update public.lobby_players p set seen = now() where p.code = l.code and p.player = p_player;
+    return json_build_object('code', l.code);
   end if;
-  update public.duels x
-     set b_player = p_player, b_name = v_name, b_secret = gen_random_uuid(), b_status = 'playing', b_seen = now(),
-         b_tiers = '{}', b_answers = '{}', b_score = 0
-   where x.code = d.code;
-  return json_build_object('code', d.code);
+  delete from public.lobby_players p
+   where p.code = l.code and p.player <> l.host and coalesce(p.seen, p.joined_at) < now() - interval '30 seconds';
+  if (select count(*) from public.lobby_players p where p.code = l.code) >= l.cap then
+    raise exception 'full';
+  end if;
+  for v_old in select p.code from public.lobby_players p join public.lobbies x on x.code = p.code
+                where p.player = p_player and x.q_at is null and p.code <> l.code order by p.code loop
+    perform public.hh_lobby_drop(v_old, p_player);
+  end loop;
+  insert into public.lobby_players (code, player, pos, seen)
+  values (l.code, p_player, coalesce((select max(p.pos) from public.lobby_players p where p.code = l.code), 0) + 1, now());
+  return json_build_object('code', l.code);
 end;
 $$;
 
--- Raum vor dem Start verlassen: Der Gastgeber schließt ihn damit, der Gast macht seinen Platz frei.
-create or replace function public.live_leave(p_code text, p_player text)
+-- Lobby vor dem Start verlassen.
+create or replace function public.lobby_leave(p_code text, p_player text)
+returns boolean
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.lobby_players p join public.lobbies x on x.code = p.code
+                  where p.code = upper(p_code) and p.player = p_player and x.q_at is null) then
+    return false;
+  end if;
+  perform public.hh_lobby_drop(upper(p_code), p_player);
+  return true;
+end;
+$$;
+
+-- Der Gastgeber entfernt einen Spieler aus der offenen Lobby; der kommt in diese Lobby nicht wieder hinein.
+create or replace function public.lobby_kick(p_code text, p_player text, p_pid text)
 returns boolean
 language plpgsql security definer set search_path = public
 as $$
 declare
-  d public.duels;
+  l        public.lobbies;
+  v_target text;
 begin
-  select * into d from public.duels x where x.code = upper(p_code) for update;
-  if not found or not d.live or d.live_q_at is not null then
+  select * into l from public.lobbies x where x.code = upper(p_code) for update;
+  if not found then
+    raise exception 'not_found';
+  end if;
+  if l.host is distinct from p_player then
+    raise exception 'not_host';
+  end if;
+  if l.q_at is not null then
+    raise exception 'already_started';
+  end if;
+  select p.player into v_target from public.lobby_players p
+   where p.code = l.code and p.player <> l.host and public.hh_pid(p.player) = p_pid;
+  if v_target is null then
     return false;
   end if;
-  if d.a_player = p_player then
-    delete from public.duels x where x.code = d.code;
-    return true;
-  end if;
-  if d.b_player is not null and d.b_player = p_player then
-    update public.duels x
-       set b_player = null, b_name = null, b_secret = null, b_status = null, b_seen = null
-     where x.code = d.code;
-    return true;
-  end if;
-  return false;
+  delete from public.lobby_players p where p.code = l.code and p.player = v_target;
+  update public.lobbies x set kicked = array_append(x.kicked, v_target) where x.code = l.code;
+  return true;
 end;
 $$;
 
--- Stand abfragen (etwa einmal pro Sekunde). Gibt null zurück, wenn es den Raum nicht (mehr) gibt.
--- p_here: Die Seite ist gerade zu sehen (vor dem Start zählt nur das als "im Raum").
-create or replace function public.live_poll(p_code text, p_player text, p_here boolean default true)
+-- Der Gastgeber startet das Spiel. Mit dabei ist, wer die Seite gerade offen hat – mindestens zwei.
+create or replace function public.lobby_start(p_code text, p_player text)
 returns json
 language plpgsql security definer set search_path = public
 as $$
 declare
-  d public.duels;
+  l public.lobbies;
 begin
-  d := public.hh_live_tick(p_code, p_player, p_here);
-  if d.code is null or not d.live then
+  l := public.hh_lobby_tick(p_code, p_player, true);
+  if l.code is null then
+    raise exception 'not_found';
+  end if;
+  if l.host is distinct from p_player then
+    raise exception 'not_host';
+  end if;
+  if l.q_at is not null then
+    return public.hh_lobby_json(l, p_player);
+  end if;
+  delete from public.lobby_players p
+   where p.code = l.code and p.player <> l.host and coalesce(p.seen, p.joined_at) < now() - interval '8 seconds';
+  if (select count(*) from public.lobby_players p where p.code = l.code) < 2 then
+    raise exception 'need_players';
+  end if;
+  update public.lobby_players p set tiers = '{}', answers = '{}', score = 0 where p.code = l.code;
+  l.q_i := 0; l.q_at := now() + make_interval(secs => public.hh_lobby_ms('count') / 1000.0); l.rev_at := null;
+  update public.lobbies x set q_i = l.q_i, q_at = l.q_at, rev_at = null where x.code = l.code;
+  return public.hh_lobby_json(l, p_player);
+end;
+$$;
+
+-- Stand abfragen (etwa einmal pro Sekunde). Gibt null zurück, wenn es die Lobby nicht (mehr) gibt.
+create or replace function public.lobby_poll(p_code text, p_player text, p_here boolean default true)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  l public.lobbies;
+begin
+  l := public.hh_lobby_tick(p_code, p_player, p_here);
+  if l.code is null then
     return null;
   end if;
-  return public.hh_live_json(d, p_player);
+  return public.hh_lobby_json(l, p_player);
 end;
 $$;
 
 -- Antwort einloggen (p_tier -1 = passen). Geht nur einmal je Frage und nur, solange die Uhr läuft.
--- Haben beide geantwortet, beginnt kurz darauf die Auflösung.
-create or replace function public.live_answer(p_code text, p_player text, p_i integer, p_tier smallint, p_answer text)
+-- Haben alle geantwortet, die gerade da sind, beginnt kurz darauf die Auflösung.
+create or replace function public.lobby_answer(p_code text, p_player text, p_i integer, p_tier smallint, p_answer text)
 returns json
 language plpgsql security definer set search_path = public
 as $$
 declare
-  d      public.duels;
-  v_role text;
-  v_pts  integer[] := array[10, 30, 55, 80, 100];
-  v_ans  text;
+  l     public.lobbies;
+  me    public.lobby_players;
+  v_pts integer[] := array[10, 30, 55, 80, 100];
+  v_ans text;
 begin
   if p_tier is null or p_tier < -1 or p_tier > 4 then
     raise exception 'bad_tiers';
@@ -1877,85 +2116,122 @@ begin
   if char_length(v_ans) > 60 or (p_tier >= 0 and v_ans = '') then
     raise exception 'bad_answers';
   end if;
-  d := public.hh_live_tick(p_code, p_player, true);
-  if d.code is null or not d.live then
+  l := public.hh_lobby_tick(p_code, p_player, true);
+  if l.code is null then
     raise exception 'not_found';
   end if;
-  v_role := case when d.a_player = p_player then 'a'
-                 when d.b_player is not null and d.b_player = p_player then 'b' end;
-  if v_role is null then
+  select * into me from public.lobby_players p where p.code = l.code and p.player = p_player;
+  if not found then
     raise exception 'not_allowed';
   end if;
-  if d.live_q_at is null or now() < d.live_q_at then
+  if l.q_at is null or now() < l.q_at then
     raise exception 'too_early';
   end if;
-  if d.a_status = 'done' or p_i is distinct from d.live_i::integer
-     or (d.live_rev_at is not null and now() >= d.live_rev_at) then
+  if l.done or p_i is distinct from l.q_i::integer or (l.rev_at is not null and now() >= l.rev_at) then
     raise exception 'too_late';
   end if;
-  if v_role = 'a' then
-    if cardinality(d.a_tiers) > d.live_i then raise exception 'already'; end if;
-    d.a_tiers := d.a_tiers || p_tier; d.a_answers := d.a_answers || v_ans;
-    if p_tier >= 0 then d.a_score := d.a_score + v_pts[p_tier + 1]; end if;
-  else
-    if cardinality(d.b_tiers) > d.live_i then raise exception 'already'; end if;
-    d.b_tiers := d.b_tiers || p_tier; d.b_answers := d.b_answers || v_ans;
-    if p_tier >= 0 then d.b_score := d.b_score + v_pts[p_tier + 1]; end if;
+  if cardinality(me.tiers) > l.q_i then
+    raise exception 'already';
   end if;
-  if cardinality(d.a_tiers) > d.live_i and cardinality(d.b_tiers) > d.live_i then
-    d.live_rev_at := now() + make_interval(secs => public.hh_live_ms('lead') / 1000.0);
+  update public.lobby_players p
+     set tiers = p.tiers || p_tier, answers = p.answers || v_ans,
+         score = p.score + case when p_tier >= 0 then v_pts[p_tier + 1] else 0 end
+   where p.code = l.code and p.player = p_player;
+  if l.rev_at is null
+     and (select count(*) > 0 and count(*) filter (where cardinality(p.tiers) <= l.q_i) = 0
+            from public.lobby_players p
+           where p.code = l.code and p.seen > now() - interval '8 seconds') then
+    l.rev_at := now() + make_interval(secs => public.hh_lobby_ms('lead') / 1000.0);
+    update public.lobbies x set rev_at = l.rev_at where x.code = l.code;
   end if;
-  update public.duels x
-     set a_tiers = d.a_tiers, a_answers = d.a_answers, a_score = d.a_score,
-         b_tiers = d.b_tiers, b_answers = d.b_answers, b_score = d.b_score, live_rev_at = d.live_rev_at
-   where x.code = d.code;
-  return public.hh_live_json(d, p_player);
+  return public.hh_lobby_json(l, p_player);
 end;
 $$;
 
--- Revanche nach einem beendeten Live-Duell: Der Erste öffnet einen neuen Raum, der Zweite landet im selben.
-create or replace function public.live_rematch(p_code text, p_player text, p_qids text[])
+-- Nochmal: Nach einem beendeten Spiel öffnet der Erste eine neue (private) Lobby, die anderen landen in derselben.
+create or replace function public.lobby_again(p_code text, p_player text, p_qids text[])
 returns json
 language plpgsql security definer set search_path = public
 as $$
 declare
-  d      public.duels;
-  n      public.duels;
-  v_name text;
-  r      json;
+  l public.lobbies;
+  n public.lobbies;
+  r json;
 begin
-  select * into d from public.duels x where x.code = upper(p_code) for update;
+  select * into l from public.lobbies x where x.code = upper(p_code) for update;
   if not found then
     raise exception 'not_found';
   end if;
-  if d.a_player is distinct from p_player and d.b_player is distinct from p_player then
+  if not exists (select 1 from public.lobby_players p where p.code = l.code and p.player = p_player) then
     raise exception 'not_allowed';
   end if;
-  if d.a_status <> 'done' or coalesce(d.b_status, '') <> 'done' then
+  if not l.done then
     raise exception 'not_done';
   end if;
-  if d.rematch is not null then
-    select * into n from public.duels x where x.code = d.rematch and x.live and x.live_q_at is null for update;
+  if l.next_code is not null then
+    select * into n from public.lobbies x where x.code = l.next_code and x.q_at is null;
     if found then
-      if n.a_player = p_player or (n.b_player is not null and n.b_player = p_player) then
-        return json_build_object('code', n.code, 'room', n.room);
-      end if;
-      if n.b_player is null or n.b_seen is null or n.b_seen < now() - interval '15 seconds' then
-        select k.name into v_name from public.accounts k where k.player_id = p_player;
-        if v_name is null then
-          raise exception 'need_account';
-        end if;
-        update public.duels x
-           set b_player = p_player, b_name = v_name, b_secret = gen_random_uuid(), b_status = 'playing', b_seen = now(),
-               b_tiers = '{}', b_answers = '{}', b_score = 0
-         where x.code = n.code;
-        return json_build_object('code', n.code, 'room', n.room);
-      end if;
+      return public.lobby_join(p_player, n.room);
     end if;
   end if;
-  r := public.live_create(p_player, p_qids);
-  update public.duels x set rematch = r ->> 'code' where x.code = d.code;
+  r := public.lobby_create(p_player, p_qids, false, greatest(l.cap, coalesce(l.n, 2))::integer);
+  update public.lobbies x set next_code = r ->> 'code' where x.code = l.code;
   return r;
+end;
+$$;
+
+-- Öffentliche Lobbys, in denen noch Platz ist und deren Gastgeber gerade da ist.
+create or replace function public.lobby_list(p_player text)
+returns json
+language sql stable security definer set search_path = public
+as $$
+  select coalesce(json_agg(json_build_object('room', x.room, 'host', x.name, 'host_pid', x.pid, 'n', x.n, 'cap', x.cap)
+                           order by x.created_at desc), '[]'::json)
+    from (
+      select l.room, l.cap, l.created_at, k.name, public.hh_pid(l.host) as pid,
+             (select count(*) from public.lobby_players p where p.code = l.code) as n
+        from public.lobbies l join public.accounts k on k.player_id = l.host
+       where l.is_public and l.q_at is null
+         and l.host is distinct from p_player
+         and not coalesce(p_player = any(l.kicked), false)
+         and exists (select 1 from public.lobby_players p
+                      where p.code = l.code and p.player = l.host and p.seen > now() - interval '12 seconds')
+         and (select count(*) from public.lobby_players p where p.code = l.code) < l.cap
+       order by l.created_at desc limit 30
+    ) x;
+$$;
+
+-- Mehrspieler-Runden (ab 3 Spielern) fürs Profil: Zahlen und die letzten Spiele.
+create or replace function public.lobby_stats(p_pid text, p_player text)
+returns json
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  v_player text;
+begin
+  if p_pid is not null then
+    select k.player_id into v_player from public.accounts k where k.pid = p_pid;
+  else
+    v_player := p_player;
+  end if;
+  if v_player is null then
+    return json_build_object('played', 0, 'wins', 0, 'top3', 0, 'recent', '[]'::json);
+  end if;
+  return (
+    with m as (
+      select l.code, l.done_at, l.n, p.place, p.pts, p.rounds, p.won
+        from public.lobby_players p join public.lobbies l on l.code = p.code
+       where p.player = v_player and l.done and l.n >= 3
+    )
+    select json_build_object(
+      'played', (select count(*) from m),
+      'wins',   (select count(*) from m where m.won),
+      'top3',   (select count(*) from m where m.place <= 3),
+      'recent', (select coalesce(json_agg(json_build_object('code', x.code, 't', (extract(epoch from x.done_at) * 1000)::bigint,
+                                                           'n', x.n, 'place', x.place, 'pts', x.pts, 'rounds', x.rounds, 'won', x.won)
+                                          order by x.done_at desc), '[]'::json)
+                   from (select * from m order by m.done_at desc limit 8) x))
+  );
 end;
 $$;
 
@@ -2058,8 +2334,8 @@ begin
 end;
 $$;
 
--- Duell lesen (Ergebnis-Ansicht, Historie). Neu: ob es ein Live-Duell ist, der Raum-Code,
--- solange noch nicht gespielt wird, und eine offene Revanche.
+-- Duell lesen (Ergebnis-Ansicht, Historie). Neu: ob es live gespielt wurde und ob jemand eine weitere
+-- Runde ("Nochmal") geöffnet hat.
 create or replace function public.get_duel(p_code text, p_player text)
 returns json
 language plpgsql security definer set search_path = public stable
@@ -2083,43 +2359,54 @@ begin
     'role', v_role,
     'final', v_fin,
     'live', d.live,
-    'room', case when d.live and d.live_q_at is null then d.room end,
-    'rematch', (select json_build_object('code', n.code, 'room', n.room, 'by', n.a_name, 'by_pid', public.hh_pid(n.a_player))
-                  from public.duels n
-                 where n.code = d.rematch and n.live and n.live_q_at is null),
+    'rematch', (select json_build_object('code', n.code, 'room', n.room, 'by_pid', public.hh_pid(n.host),
+                                         'by', (select k.name from public.accounts k where k.player_id = n.host))
+                  from public.lobbies l join public.lobbies n on n.code = l.next_code
+                 where l.code = d.code and n.q_at is null),
     'a', json_build_object(
       'name', d.a_name, 'pid', public.hh_pid(d.a_player), 'status', d.a_status, 'n', coalesce(array_length(d.a_tiers, 1), 0),
-      'tiers',   case when v_fin or (v_role = 'a' and not d.live) then to_json(d.a_tiers) end,
-      'answers', case when v_fin or (v_role = 'a' and not d.live) then to_json(d.a_answers) end,
-      'score',   case when v_fin or (v_role = 'a' and not d.live) then d.a_score end),
+      'tiers',   case when v_fin or v_role = 'a' then to_json(d.a_tiers) end,
+      'answers', case when v_fin or v_role = 'a' then to_json(d.a_answers) end,
+      'score',   case when v_fin or v_role = 'a' then d.a_score end),
     'b', case when d.b_name is null then null else json_build_object(
       'name', d.b_name, 'pid', public.hh_pid(d.b_player), 'status', d.b_status, 'n', coalesce(array_length(d.b_tiers, 1), 0),
-      'tiers',   case when v_fin or (v_role = 'b' and not d.live) then to_json(d.b_tiers) end,
-      'answers', case when v_fin or (v_role = 'b' and not d.live) then to_json(d.b_answers) end,
-      'score',   case when v_fin or (v_role = 'b' and not d.live) then d.b_score end) end
+      'tiers',   case when v_fin or v_role = 'b' then to_json(d.b_tiers) end,
+      'answers', case when v_fin or v_role = 'b' then to_json(d.b_answers) end,
+      'score',   case when v_fin or v_role = 'b' then d.b_score end) end
   );
 end;
 $$;
 
-revoke all on function public.hh_live_ms(text) from public, anon, authenticated;
-revoke all on function public.hh_live_tick(text, text, boolean) from public, anon, authenticated;
-revoke all on function public.hh_live_json(public.duels, text) from public, anon, authenticated;
-revoke all on function public.hh_live_sweep() from public, anon, authenticated;
-revoke all on function public.live_create(text, text[]) from public;
-revoke all on function public.live_join(text, text) from public;
-revoke all on function public.live_leave(text, text) from public;
-revoke all on function public.live_poll(text, text, boolean) from public;
-revoke all on function public.live_answer(text, text, integer, smallint, text) from public;
-revoke all on function public.live_rematch(text, text, text[]) from public;
+revoke all on function public.hh_lobby_ms(text) from public, anon, authenticated;
+revoke all on function public.hh_lobby_rank(text) from public, anon, authenticated;
+revoke all on function public.hh_lobby_finish(text) from public, anon, authenticated;
+revoke all on function public.hh_lobby_tick(text, text, boolean) from public, anon, authenticated;
+revoke all on function public.hh_lobby_json(public.lobbies, text) from public, anon, authenticated;
+revoke all on function public.hh_lobby_drop(text, text) from public, anon, authenticated;
+revoke all on function public.hh_lobby_sweep() from public, anon, authenticated;
+revoke all on function public.lobby_create(text, text[], boolean, integer) from public;
+revoke all on function public.lobby_join(text, text) from public;
+revoke all on function public.lobby_leave(text, text) from public;
+revoke all on function public.lobby_kick(text, text, text) from public;
+revoke all on function public.lobby_start(text, text) from public;
+revoke all on function public.lobby_poll(text, text, boolean) from public;
+revoke all on function public.lobby_answer(text, text, integer, smallint, text) from public;
+revoke all on function public.lobby_again(text, text, text[]) from public;
+revoke all on function public.lobby_list(text) from public;
+revoke all on function public.lobby_stats(text, text) from public;
 revoke all on function public.join_duel(text, text, text) from public;
 revoke all on function public.save_duel(text, uuid, smallint[], text[], boolean) from public;
 revoke all on function public.get_duel(text, text) from public;
-grant execute on function public.live_create(text, text[]) to anon, authenticated;
-grant execute on function public.live_join(text, text) to anon, authenticated;
-grant execute on function public.live_leave(text, text) to anon, authenticated;
-grant execute on function public.live_poll(text, text, boolean) to anon, authenticated;
-grant execute on function public.live_answer(text, text, integer, smallint, text) to anon, authenticated;
-grant execute on function public.live_rematch(text, text, text[]) to anon, authenticated;
+grant execute on function public.lobby_create(text, text[], boolean, integer) to anon, authenticated;
+grant execute on function public.lobby_join(text, text) to anon, authenticated;
+grant execute on function public.lobby_leave(text, text) to anon, authenticated;
+grant execute on function public.lobby_kick(text, text, text) to anon, authenticated;
+grant execute on function public.lobby_start(text, text) to anon, authenticated;
+grant execute on function public.lobby_poll(text, text, boolean) to anon, authenticated;
+grant execute on function public.lobby_answer(text, text, integer, smallint, text) to anon, authenticated;
+grant execute on function public.lobby_again(text, text, text[]) to anon, authenticated;
+grant execute on function public.lobby_list(text) to anon, authenticated;
+grant execute on function public.lobby_stats(text, text) to anon, authenticated;
 grant execute on function public.join_duel(text, text, text) to anon, authenticated;
 grant execute on function public.save_duel(text, uuid, smallint[], text[], boolean) to anon, authenticated;
 grant execute on function public.get_duel(text, text) to anon, authenticated;
