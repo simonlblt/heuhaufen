@@ -1040,6 +1040,12 @@ alter table public.accounts add column if not exists free_day     date;
 alter table public.accounts add column if not exists free_today   integer not null default 0;
 -- Zeitpunkt der letzten Namensänderung (siehe Teil 6).
 alter table public.accounts add column if not exists name_changed_at timestamptz;
+-- Token und Shop (siehe Teil 7): ausgegebene Token, gekaufte Dinge, angelegter Namens-Stil, Glücksbringer links/rechts.
+alter table public.accounts add column if not exists spent      integer not null default 0;
+alter table public.accounts add column if not exists items      text[] not null default '{}';
+alter table public.accounts add column if not exists name_style text;
+alter table public.accounts add column if not exists charm_l    text;
+alter table public.accounts add column if not exists charm_r    text;
 
 create or replace function public.add_free(p_player text, p_tiers smallint[])
 returns json
@@ -1214,6 +1220,20 @@ begin
     'rename_next', case when v_me then (select (extract(epoch from k.name_changed_at + interval '7 days') * 1000)::bigint
                        from public.accounts k
                       where k.player_id = v_player and k.name_changed_at > now() - interval '7 days') end,
+    'tokens', case when v_me then greatest(public.hh_tokens(v_player)
+                 - coalesce((select k.spent from public.accounts k where k.player_id = v_player), 0), 0) end,
+    'name_style', (select k.name_style from public.accounts k where k.player_id = v_player),
+    'charm_l', (select k.charm_l from public.accounts k where k.player_id = v_player),
+    'charm_r', (select k.charm_r from public.accounts k where k.player_id = v_player),
+    'bonus', case when v_me then (
+        select json_build_object('day', x.day, 'pos', x.pos, 'tokens', public.hh_day_bonus(x.pos))
+          from (select s.day,
+                       (select count(*) + 1 from public.scores s2
+                         where s2.day = s.day and s2.name is not null and s2.score > s.score) as pos
+                  from public.scores s
+                 where s.player_id = v_player and s.name is not null and s.score > 0
+                   and s.day < v_today and s.day >= v_today - 7
+                 order by s.day desc limit 1) x) end,
     'avatar', (select k.avatar from public.accounts k where k.player_id = v_player),
     'xp', public.hh_xp(v_player),
     'free', (select json_build_object('rounds', k.free_rounds, 'best', k.free_best, 'needles', k.free_needles)
@@ -1346,6 +1366,181 @@ $$;
 
 revoke all on function public.change_name(text, text) from public;
 grant execute on function public.change_name(text, text) to anon, authenticated;
+
+-- ============================================================
+-- Teil 7 · Token und Shop (bunte Namen, Glücksbringer)
+-- ============================================================
+
+-- Was es im Shop gibt und was es kostet. Die Preise hier sind maßgeblich.
+create table if not exists public.shop_items (
+  id    text primary key check (id ~ '^[a-z0-9_]{2,24}$'),
+  kind  text not null check (kind in ('name', 'charm')),
+  price integer not null check (price between 1 and 100000)
+);
+alter table public.shop_items enable row level security;
+revoke all on table public.shop_items from anon, authenticated;
+
+insert into public.shop_items (id, kind, price) values
+  ('n_rot', 'name', 100), ('n_orange', 'name', 100), ('n_gruen', 'name', 100), ('n_tuerkis', 'name', 100),
+  ('n_blau', 'name', 100), ('n_lila', 'name', 100), ('n_pink', 'name', 100), ('n_gold', 'name', 250),
+  ('n_sonne', 'name', 300), ('n_polar', 'name', 300), ('n_feuer', 'name', 300), ('n_ozean', 'name', 300),
+  ('n_regen', 'name', 600), ('n_glanz', 'name', 900),
+  ('c_klee', 'charm', 150), ('c_kaefer', 'charm', 200), ('c_pilz', 'charm', 250), ('c_blume', 'charm', 250),
+  ('c_hufeisen', 'charm', 300), ('c_maus', 'charm', 350), ('c_schwein', 'charm', 400), ('c_stern', 'charm', 500),
+  ('c_scheuche', 'charm', 800)
+on conflict (id) do update set kind = excluded.kind, price = excluded.price;
+
+-- Bonus am Tagesende für alle, die in der Bestenliste stehen: bewusst klein.
+create or replace function public.hh_day_bonus(p_pos bigint)
+returns integer
+language sql immutable
+as $$ select case when p_pos = 1 then 25 when p_pos = 2 then 15 when p_pos = 3 then 10 else 5 end $$;
+
+-- Verdiente Token insgesamt: 1 Token je 10 Punkte in Tagesrätsel und Duell, 1 Token je 20 Punkte in Classic,
+-- 10 je Duellsieg, dazu der Tagesbonus (erst wenn der Tag vorbei ist).
+create or replace function public.hh_tokens(p_player text)
+returns integer
+language sql security definer set search_path = public stable
+as $$
+  select (
+    (coalesce((select sum(s.score) from public.scores s where s.player_id = p_player), 0)
+     + coalesce((select sum(case when d.a_player = p_player then d.a_score else d.b_score end)
+                   from public.duels d where d.a_player = p_player or d.b_player = p_player), 0)) / 10
+    + coalesce((select k.free_xp from public.accounts k where k.player_id = p_player), 0) / 10
+    + 10 * (select count(*)
+              from public.duels d cross join lateral public.hh_duel_outcome(d) o
+             where d.a_status = 'done' and coalesce(d.b_status, '') = 'done'
+               and ((d.a_player = p_player and o.winner = 'a') or (d.b_player = p_player and o.winner = 'b')))
+    + coalesce((select sum(public.hh_day_bonus(
+                  (select count(*) + 1 from public.scores s2
+                    where s2.day = s.day and s2.name is not null and s2.score > s.score)))
+                  from public.scores s
+                 where s.player_id = p_player and s.name is not null and s.score > 0
+                   and s.day < (now() at time zone 'Europe/Berlin')::date), 0)
+  )::integer;
+$$;
+
+-- Shop-Stand lesen: Kontostand, gekaufte Dinge, was gerade angelegt ist, dazu alle Preise.
+create or replace function public.get_shop(p_player text)
+returns json
+language plpgsql security definer set search_path = public stable
+as $$
+declare
+  k public.accounts;
+  v_found boolean := false;
+begin
+  if p_player is not null and char_length(p_player) between 8 and 64 then
+    select * into k from public.accounts x where x.player_id = p_player;
+    v_found := found;
+  end if;
+  return json_build_object(
+    'account', v_found,
+    'tokens', case when v_found then greatest(public.hh_tokens(p_player) - k.spent, 0) else 0 end,
+    'items', case when v_found then to_json(k.items) else '[]'::json end,
+    'name_style', case when v_found then k.name_style end,
+    'charm_l', case when v_found then k.charm_l end,
+    'charm_r', case when v_found then k.charm_r end,
+    'prices', (select coalesce(json_object_agg(i.id, i.price), '{}'::json) from public.shop_items i)
+  );
+end;
+$$;
+
+-- Kaufen. Ein neuer Namens-Stil wird gleich angelegt, ein Glücksbringer auf freie Plätze gestellt.
+create or replace function public.buy_item(p_player text, p_item text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  k     public.accounts;
+  it    public.shop_items;
+  v_bal integer;
+begin
+  if p_player is null or char_length(p_player) not between 8 and 64 then
+    raise exception 'bad_player';
+  end if;
+  select * into it from public.shop_items i where i.id = p_item;
+  if not found then
+    raise exception 'bad_item';
+  end if;
+  select * into k from public.accounts x where x.player_id = p_player for update;
+  if not found then
+    raise exception 'need_account';
+  end if;
+  if p_item = any (k.items) then
+    raise exception 'already_owned';
+  end if;
+  v_bal := public.hh_tokens(p_player) - k.spent;
+  if v_bal < it.price then
+    return json_build_object('ok', false, 'error', 'too_poor', 'tokens', greatest(v_bal, 0), 'price', it.price);
+  end if;
+  update public.accounts x
+     set items = array_append(x.items, p_item),
+         spent = x.spent + it.price,
+         name_style = case when it.kind = 'name' then p_item else x.name_style end,
+         charm_l = case when it.kind = 'charm' and x.charm_l is null then p_item else x.charm_l end,
+         charm_r = case when it.kind = 'charm' and x.charm_r is null then p_item else x.charm_r end
+   where x.player_id = p_player;
+  return (public.get_shop(p_player)::jsonb || jsonb_build_object('ok', true))::json;
+end;
+$$;
+
+-- An- und ablegen. Platz: 'name', 'left' oder 'right'. Leerer Wert legt ab.
+create or replace function public.equip_item(p_player text, p_slot text, p_item text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  k      public.accounts;
+  v_item text := nullif(p_item, '');
+  v_kind text;
+begin
+  if p_player is null or char_length(p_player) not between 8 and 64 then
+    raise exception 'bad_player';
+  end if;
+  if p_slot is null or p_slot not in ('name', 'left', 'right') then
+    raise exception 'bad_slot';
+  end if;
+  select * into k from public.accounts x where x.player_id = p_player for update;
+  if not found then
+    raise exception 'need_account';
+  end if;
+  if v_item is not null then
+    select i.kind into v_kind from public.shop_items i where i.id = v_item;
+    if v_kind is null or not (v_item = any (k.items))
+       or v_kind <> (case when p_slot = 'name' then 'name' else 'charm' end) then
+      raise exception 'not_owned';
+    end if;
+  end if;
+  update public.accounts x
+     set name_style = case when p_slot = 'name'  then v_item else x.name_style end,
+         charm_l    = case when p_slot = 'left'  then v_item else x.charm_l end,
+         charm_r    = case when p_slot = 'right' then v_item else x.charm_r end
+   where x.player_id = p_player;
+  return (public.get_shop(p_player)::jsonb || jsonb_build_object('ok', true))::json;
+end;
+$$;
+
+-- Aussehen für eine Liste öffentlicher Kennungen: Profilbild, Namens-Stil, Glücksbringer (höchstens 60 auf einmal).
+create or replace function public.get_looks(p_pids text[])
+returns json
+language sql security definer set search_path = public stable
+as $$
+  select coalesce(json_object_agg(k.pid, json_build_object('a', k.avatar, 'n', k.name_style, 'l', k.charm_l, 'r', k.charm_r)), '{}'::json)
+    from public.accounts k
+   where k.pid = any (p_pids[1:60])
+     and (k.avatar is not null or k.name_style is not null or k.charm_l is not null or k.charm_r is not null);
+$$;
+
+revoke all on function public.hh_day_bonus(bigint) from public, anon, authenticated;
+revoke all on function public.hh_tokens(text) from public, anon, authenticated;
+revoke all on function public.get_shop(text) from public;
+revoke all on function public.buy_item(text, text) from public;
+revoke all on function public.equip_item(text, text, text) from public;
+revoke all on function public.get_looks(text[]) from public;
+grant execute on function public.get_shop(text) to anon, authenticated;
+grant execute on function public.buy_item(text, text) to anon, authenticated;
+grant execute on function public.equip_item(text, text, text) to anon, authenticated;
+grant execute on function public.get_looks(text[]) to anon, authenticated;
 
 -- Supabase die neuen Funktionen sofort bekannt machen.
 notify pgrst, 'reload schema';
