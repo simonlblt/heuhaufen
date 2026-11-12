@@ -1542,5 +1542,587 @@ grant execute on function public.buy_item(text, text) to anon, authenticated;
 grant execute on function public.equip_item(text, text, text) to anon, authenticated;
 grant execute on function public.get_looks(text[]) to anon, authenticated;
 
+-- ============================================================
+-- Teil 8 · Live-Duell (Raum mit 4-stelligem Code, gemeinsame Uhr)
+-- ============================================================
+-- Ablauf: Einer öffnet einen Raum (live_create) und bekommt einen 4-stelligen Code, der andere
+-- tritt damit bei (live_join). Sobald beide die Seite offen haben, startet ein Countdown. Jede
+-- Frage läuft für beide zur selben Zeit – die Uhr führt die Datenbank. Was der Gegner geantwortet
+-- hat, gibt sie erst zur Auflösung heraus. Alle Übergänge (nächste Frage, Auflösung, Ende) werden
+-- beim Abfragen aus den Zeitstempeln berechnet; es läuft kein Dienst im Hintergrund.
+
+alter table public.duels add column if not exists live        boolean not null default false;
+alter table public.duels add column if not exists room        text;
+alter table public.duels add column if not exists live_i      smallint not null default 0;
+alter table public.duels add column if not exists live_q_at   timestamptz;   -- Start der aktuellen Frage
+alter table public.duels add column if not exists live_rev_at timestamptz;   -- Start der Auflösung (leer: noch offen)
+alter table public.duels add column if not exists a_seen      timestamptz;
+alter table public.duels add column if not exists b_seen      timestamptz;
+alter table public.duels add column if not exists rematch     text;          -- Code der Revanche
+alter table public.duels drop constraint if exists duels_room_check;
+alter table public.duels add constraint duels_room_check check (room is null or room ~ '^[0-9]{4}$');
+-- Der Raum-Code muss nur unter den noch nicht gestarteten Räumen eindeutig sein; danach ist er wieder frei.
+create unique index if not exists duels_room_idx on public.duels (room) where live and live_q_at is null;
+
+-- Zeiten in Millisekunden: Countdown, Antwortzeit, Nachlauf fürs Netz, Vorlauf zur Auflösung, Dauer der Auflösung.
+create or replace function public.hh_live_ms(p_what text)
+returns integer
+language sql immutable
+as $$
+  select case p_what when 'count' then 5000 when 'ask' then 30000 when 'grace' then 1500
+                     when 'lead' then 1200 when 'reveal' then 10000 end
+$$;
+
+-- Die Uhr: sperrt das Duell, merkt sich die Anwesenheit des Abfragenden und stellt den Stand
+-- auf die aktuelle Zeit vor (Start, Auflösung, nächste Frage, Ende).
+create or replace function public.hh_live_tick(p_code text, p_player text, p_here boolean)
+returns public.duels
+language plpgsql security definer set search_path = public
+as $$
+declare
+  d        public.duels;
+  v_ask    interval := make_interval(secs => (public.hh_live_ms('ask') + public.hh_live_ms('grace')) / 1000.0);
+  v_reveal interval := make_interval(secs => public.hh_live_ms('reveal') / 1000.0);
+  v_count  interval := make_interval(secs => public.hh_live_ms('count') / 1000.0);
+  v_role   text;
+  v_touch  boolean := false;
+begin
+  select * into d from public.duels x where x.code = upper(p_code) for update;
+  if not found or not d.live then
+    return d;
+  end if;
+  v_role := case when p_player is null then null
+                 when d.a_player = p_player then 'a'
+                 when d.b_player is not null and d.b_player = p_player then 'b' end;
+
+  -- Anwesenheit: vor dem Start bei jeder Abfrage, im Spiel höchstens alle 2,5 Sekunden.
+  -- p_here ist falsch, solange die Seite vor dem Start nur im Hintergrund offen ist.
+  if coalesce(p_here, true) then
+    if v_role = 'a' and (d.live_q_at is null or d.a_seen is null or d.a_seen < now() - interval '2.5 seconds') then
+      d.a_seen := now(); v_touch := true;
+    elsif v_role = 'b' and (d.live_q_at is null or d.b_seen is null or d.b_seen < now() - interval '2.5 seconds') then
+      d.b_seen := now(); v_touch := true;
+    end if;
+  end if;
+
+  if d.live_q_at is null then
+    -- Start: sobald beide im Raum sind und die Seite vor sich haben.
+    if d.b_player is not null and d.a_seen > now() - interval '4 seconds' and d.b_seen > now() - interval '4 seconds' then
+      d.live_i := 0; d.live_q_at := now() + v_count; d.live_rev_at := null; v_touch := true;
+    end if;
+  else
+    loop
+      exit when d.a_status = 'done' or now() < d.live_q_at;
+      if d.live_rev_at is null then
+        exit when now() < d.live_q_at + v_ask;
+        d.live_rev_at := d.live_q_at + v_ask; v_touch := true;       -- Zeit um
+      end if;
+      exit when now() < d.live_rev_at;
+      -- Die Auflösung läuft: Wer nicht geantwortet hat, bekommt "keine Antwort".
+      while cardinality(d.a_tiers) < d.live_i + 1 loop
+        d.a_tiers := d.a_tiers || (-1)::smallint; d.a_answers := d.a_answers || ''::text; v_touch := true;
+      end loop;
+      while cardinality(d.b_tiers) < d.live_i + 1 loop
+        d.b_tiers := d.b_tiers || (-1)::smallint; d.b_answers := d.b_answers || ''::text; v_touch := true;
+      end loop;
+      if d.live_i >= 4 then
+        d.a_status := 'done'; d.b_status := 'done'; d.a_done_at := d.live_rev_at; d.b_done_at := d.live_rev_at; v_touch := true;
+        exit;
+      end if;
+      exit when now() < d.live_rev_at + v_reveal;
+      d.live_i := d.live_i + 1; d.live_q_at := d.live_rev_at + v_reveal; d.live_rev_at := null; v_touch := true;
+    end loop;
+  end if;
+
+  if v_touch then
+    update public.duels x
+       set a_seen = d.a_seen, b_seen = d.b_seen, live_i = d.live_i, live_q_at = d.live_q_at, live_rev_at = d.live_rev_at,
+           a_tiers = d.a_tiers, a_answers = d.a_answers, b_tiers = d.b_tiers, b_answers = d.b_answers,
+           a_status = d.a_status, b_status = d.b_status, a_done_at = d.a_done_at, b_done_at = d.b_done_at
+     where x.code = d.code;
+  end if;
+  return d;
+end;
+$$;
+
+-- Der Stand eines Live-Duells, wie ihn ein Spieler sehen darf: die eigenen Antworten immer,
+-- die des Gegners erst ab der Auflösung der jeweiligen Frage.
+create or replace function public.hh_live_json(d public.duels, p_player text)
+returns json
+language plpgsql stable set search_path = public
+as $$
+declare
+  v_role   text := case when d.a_player = p_player then 'a'
+                        when d.b_player is not null and d.b_player = p_player then 'b' end;
+  v_reveal interval := make_interval(secs => public.hh_live_ms('reveal') / 1000.0);
+  v_away   interval := case when d.live_q_at is null then interval '4 seconds' else interval '8 seconds' end;
+  v_phase  text;
+  v_open   integer;
+begin
+  v_phase := case
+    when d.b_player is null then 'wait'
+    when d.live_q_at is null then 'ready'
+    when now() < d.live_q_at then 'count'
+    when d.a_status = 'done' and now() >= d.live_rev_at + v_reveal then 'done'
+    when d.live_rev_at is not null and now() >= d.live_rev_at then 'reveal'
+    else 'ask' end;
+  v_open := case when v_phase in ('wait', 'ready', 'count') then 0
+                 when v_phase = 'ask' then d.live_i
+                 when v_phase = 'done' then 5
+                 else d.live_i + 1 end;
+  return json_build_object(
+    'code', d.code, 'room', d.room, 'live', true, 'role', v_role, 'phase', v_phase, 'i', d.live_i, 'open', v_open,
+    'now',    (extract(epoch from now()) * 1000)::bigint,
+    'q_at',   (extract(epoch from d.live_q_at) * 1000)::bigint,
+    'rev_at', (extract(epoch from d.live_rev_at) * 1000)::bigint,
+    'count_ms', public.hh_live_ms('count'), 'ask_ms', public.hh_live_ms('ask'), 'grace_ms', public.hh_live_ms('grace'),
+    'reveal_ms', public.hh_live_ms('reveal'),
+    'qids', d.qids,
+    'final', d.a_status = 'done' and coalesce(d.b_status, '') = 'done',
+    'a', json_build_object(
+      'name', d.a_name, 'pid', public.hh_pid(d.a_player),
+      'here', coalesce(d.a_seen > now() - v_away, false),
+      'answered', cardinality(d.a_tiers) > d.live_i,
+      'tiers',   to_json(case when v_role = 'a' then d.a_tiers   else d.a_tiers[1:v_open] end),
+      'answers', to_json(case when v_role = 'a' then d.a_answers else d.a_answers[1:v_open] end)),
+    'b', case when d.b_player is null then null else json_build_object(
+      'name', d.b_name, 'pid', public.hh_pid(d.b_player),
+      'here', coalesce(d.b_seen > now() - v_away, false),
+      'answered', cardinality(d.b_tiers) > d.live_i,
+      'tiers',   to_json(case when v_role = 'b' then d.b_tiers   else d.b_tiers[1:v_open] end),
+      'answers', to_json(case when v_role = 'b' then d.b_answers else d.b_answers[1:v_open] end)) end
+  );
+end;
+$$;
+
+-- Aufräumen: verlassene Räume löschen, liegengebliebene Duelle zu Ende zählen.
+create or replace function public.hh_live_sweep()
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_code text;
+begin
+  delete from public.duels d
+   where d.live and d.live_q_at is null and coalesce(d.a_seen, d.created_at) < now() - interval '30 minutes';
+  for v_code in
+    select d.code from public.duels d
+     where d.live and d.live_q_at is not null and d.a_status <> 'done' and d.live_q_at < now() - interval '50 seconds'
+     order by d.code
+  loop
+    perform public.hh_live_tick(v_code, null, false);
+  end loop;
+end;
+$$;
+
+-- Raum öffnen. Die 5 Fragen lost die Seite aus; zurück kommen der Duell-Code und der 4-stellige Raum-Code.
+create or replace function public.live_create(p_player text, p_qids text[])
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_alpha text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  v_code  text;
+  v_room  text;
+  v_try   integer := 0;
+  v_q     text;
+  v_name  text;
+begin
+  if p_player is null or char_length(p_player) not between 8 and 64 then
+    raise exception 'bad_player';
+  end if;
+  select k.name into v_name from public.accounts k where k.player_id = p_player;
+  if v_name is null then
+    raise exception 'need_account';
+  end if;
+  if p_qids is null or coalesce(array_length(p_qids, 1), 0) <> 5 then
+    raise exception 'bad_questions';
+  end if;
+  foreach v_q in array p_qids loop
+    if v_q is null or v_q !~ '^[a-z0-9]{1,12}$' then
+      raise exception 'bad_questions';
+    end if;
+  end loop;
+  perform public.hh_live_sweep();
+  -- Je Spieler nur ein offener Raum: ein älterer, noch nicht gestarteter wird geschlossen.
+  delete from public.duels d where d.live and d.live_q_at is null and d.a_player = p_player;
+  if (select count(*) from public.duels d where d.a_player = p_player and d.created_at > now() - interval '1 day') >= 60 then
+    raise exception 'too_many';
+  end if;
+  loop
+    v_code := '';
+    for i in 1..5 loop
+      v_code := v_code || substr(v_alpha, 1 + floor(random() * length(v_alpha))::int, 1);
+    end loop;
+    v_room := (1000 + floor(random() * 9000)::int)::text;
+    begin
+      insert into public.duels (code, qids, a_player, a_name, live, room, a_seen)
+      values (v_code, p_qids, p_player, v_name, true, v_room, now());
+      return json_build_object('code', v_code, 'room', v_room);
+    exception when unique_violation then
+      v_try := v_try + 1;
+      if v_try > 30 then
+        raise exception 'no_code';
+      end if;
+    end;
+  end loop;
+end;
+$$;
+
+-- Raum betreten (mit dem 4-stelligen Code). Zurück kommt der Duell-Code.
+create or replace function public.live_join(p_player text, p_room text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  d      public.duels;
+  v_name text;
+begin
+  if p_player is null or char_length(p_player) not between 8 and 64 then
+    raise exception 'bad_player';
+  end if;
+  select k.name into v_name from public.accounts k where k.player_id = p_player;
+  if v_name is null then
+    raise exception 'need_account';
+  end if;
+  if p_room is null or p_room !~ '^[0-9]{4}$' then
+    raise exception 'not_found';
+  end if;
+  perform public.hh_live_sweep();
+  select * into d from public.duels x where x.live and x.room = p_room and x.live_q_at is null for update;
+  if not found then
+    -- Läuft das Duell mit diesem Code schon und ich bin dabei? Dann einfach wieder hinein.
+    select * into d from public.duels x
+     where x.live and x.room = p_room and x.a_status <> 'done' and (x.a_player = p_player or x.b_player = p_player)
+     order by x.created_at desc limit 1;
+    if found then
+      return json_build_object('code', d.code);
+    end if;
+    raise exception 'not_found';
+  end if;
+  if d.a_player = p_player or (d.b_player is not null and d.b_player = p_player) then
+    return json_build_object('code', d.code);
+  end if;
+  -- Besetzt ist der Platz nur, solange der andere Gast die Seite noch offen hat.
+  if d.b_player is not null and d.b_seen > now() - interval '15 seconds' then
+    raise exception 'taken';
+  end if;
+  update public.duels x
+     set b_player = p_player, b_name = v_name, b_secret = gen_random_uuid(), b_status = 'playing', b_seen = now(),
+         b_tiers = '{}', b_answers = '{}', b_score = 0
+   where x.code = d.code;
+  return json_build_object('code', d.code);
+end;
+$$;
+
+-- Raum vor dem Start verlassen: Der Gastgeber schließt ihn damit, der Gast macht seinen Platz frei.
+create or replace function public.live_leave(p_code text, p_player text)
+returns boolean
+language plpgsql security definer set search_path = public
+as $$
+declare
+  d public.duels;
+begin
+  select * into d from public.duels x where x.code = upper(p_code) for update;
+  if not found or not d.live or d.live_q_at is not null then
+    return false;
+  end if;
+  if d.a_player = p_player then
+    delete from public.duels x where x.code = d.code;
+    return true;
+  end if;
+  if d.b_player is not null and d.b_player = p_player then
+    update public.duels x
+       set b_player = null, b_name = null, b_secret = null, b_status = null, b_seen = null
+     where x.code = d.code;
+    return true;
+  end if;
+  return false;
+end;
+$$;
+
+-- Stand abfragen (etwa einmal pro Sekunde). Gibt null zurück, wenn es den Raum nicht (mehr) gibt.
+-- p_here: Die Seite ist gerade zu sehen (vor dem Start zählt nur das als "im Raum").
+create or replace function public.live_poll(p_code text, p_player text, p_here boolean default true)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  d public.duels;
+begin
+  d := public.hh_live_tick(p_code, p_player, p_here);
+  if d.code is null or not d.live then
+    return null;
+  end if;
+  return public.hh_live_json(d, p_player);
+end;
+$$;
+
+-- Antwort einloggen (p_tier -1 = passen). Geht nur einmal je Frage und nur, solange die Uhr läuft.
+-- Haben beide geantwortet, beginnt kurz darauf die Auflösung.
+create or replace function public.live_answer(p_code text, p_player text, p_i integer, p_tier smallint, p_answer text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  d      public.duels;
+  v_role text;
+  v_pts  integer[] := array[10, 30, 55, 80, 100];
+  v_ans  text;
+begin
+  if p_tier is null or p_tier < -1 or p_tier > 4 then
+    raise exception 'bad_tiers';
+  end if;
+  v_ans := case when p_tier >= 0 then btrim(coalesce(p_answer, '')) else '' end;
+  if char_length(v_ans) > 60 or (p_tier >= 0 and v_ans = '') then
+    raise exception 'bad_answers';
+  end if;
+  d := public.hh_live_tick(p_code, p_player, true);
+  if d.code is null or not d.live then
+    raise exception 'not_found';
+  end if;
+  v_role := case when d.a_player = p_player then 'a'
+                 when d.b_player is not null and d.b_player = p_player then 'b' end;
+  if v_role is null then
+    raise exception 'not_allowed';
+  end if;
+  if d.live_q_at is null or now() < d.live_q_at then
+    raise exception 'too_early';
+  end if;
+  if d.a_status = 'done' or p_i is distinct from d.live_i::integer
+     or (d.live_rev_at is not null and now() >= d.live_rev_at) then
+    raise exception 'too_late';
+  end if;
+  if v_role = 'a' then
+    if cardinality(d.a_tiers) > d.live_i then raise exception 'already'; end if;
+    d.a_tiers := d.a_tiers || p_tier; d.a_answers := d.a_answers || v_ans;
+    if p_tier >= 0 then d.a_score := d.a_score + v_pts[p_tier + 1]; end if;
+  else
+    if cardinality(d.b_tiers) > d.live_i then raise exception 'already'; end if;
+    d.b_tiers := d.b_tiers || p_tier; d.b_answers := d.b_answers || v_ans;
+    if p_tier >= 0 then d.b_score := d.b_score + v_pts[p_tier + 1]; end if;
+  end if;
+  if cardinality(d.a_tiers) > d.live_i and cardinality(d.b_tiers) > d.live_i then
+    d.live_rev_at := now() + make_interval(secs => public.hh_live_ms('lead') / 1000.0);
+  end if;
+  update public.duels x
+     set a_tiers = d.a_tiers, a_answers = d.a_answers, a_score = d.a_score,
+         b_tiers = d.b_tiers, b_answers = d.b_answers, b_score = d.b_score, live_rev_at = d.live_rev_at
+   where x.code = d.code;
+  return public.hh_live_json(d, p_player);
+end;
+$$;
+
+-- Revanche nach einem beendeten Live-Duell: Der Erste öffnet einen neuen Raum, der Zweite landet im selben.
+create or replace function public.live_rematch(p_code text, p_player text, p_qids text[])
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  d      public.duels;
+  n      public.duels;
+  v_name text;
+  r      json;
+begin
+  select * into d from public.duels x where x.code = upper(p_code) for update;
+  if not found then
+    raise exception 'not_found';
+  end if;
+  if d.a_player is distinct from p_player and d.b_player is distinct from p_player then
+    raise exception 'not_allowed';
+  end if;
+  if d.a_status <> 'done' or coalesce(d.b_status, '') <> 'done' then
+    raise exception 'not_done';
+  end if;
+  if d.rematch is not null then
+    select * into n from public.duels x where x.code = d.rematch and x.live and x.live_q_at is null for update;
+    if found then
+      if n.a_player = p_player or (n.b_player is not null and n.b_player = p_player) then
+        return json_build_object('code', n.code, 'room', n.room);
+      end if;
+      if n.b_player is null or n.b_seen is null or n.b_seen < now() - interval '15 seconds' then
+        select k.name into v_name from public.accounts k where k.player_id = p_player;
+        if v_name is null then
+          raise exception 'need_account';
+        end if;
+        update public.duels x
+           set b_player = p_player, b_name = v_name, b_secret = gen_random_uuid(), b_status = 'playing', b_seen = now(),
+               b_tiers = '{}', b_answers = '{}', b_score = 0
+         where x.code = n.code;
+        return json_build_object('code', n.code, 'room', n.room);
+      end if;
+    end if;
+  end if;
+  r := public.live_create(p_player, p_qids);
+  update public.duels x set rematch = r ->> 'code' where x.code = d.code;
+  return r;
+end;
+$$;
+
+-- Die Funktionen des alten Duells per Link dürfen Live-Duelle nicht anfassen.
+create or replace function public.join_duel(p_code text, p_player text, p_name text)
+returns uuid
+language plpgsql security definer set search_path = public
+as $$
+declare
+  d        public.duels;
+  v_name   text;
+  v_secret uuid := gen_random_uuid();
+begin
+  if p_player is null or char_length(p_player) not between 8 and 64 then
+    raise exception 'bad_player';
+  end if;
+  select k.name into v_name from public.accounts k where k.player_id = p_player;
+  if v_name is null then
+    raise exception 'need_account';
+  end if;
+  select * into d from public.duels x where x.code = upper(p_code) for update;
+  if not found or d.live then
+    raise exception 'not_found';
+  end if;
+  if d.a_player = p_player then
+    raise exception 'own_duel';
+  end if;
+  if d.b_player is not null then
+    if d.b_player = p_player then
+      raise exception 'already_joined';
+    end if;
+    raise exception 'taken';
+  end if;
+  update public.duels x
+     set b_player = p_player, b_name = v_name, b_secret = v_secret, b_status = 'playing'
+   where x.code = d.code;
+  return v_secret;
+end;
+$$;
+
+create or replace function public.save_duel(p_code text, p_secret uuid, p_tiers smallint[], p_answers text[], p_done boolean)
+returns integer
+language plpgsql security definer set search_path = public
+as $$
+declare
+  d       public.duels;
+  v_n     integer := coalesce(array_length(p_tiers, 1), 0);
+  v_score integer := 0;
+  v_tier  smallint;
+  v_ans   text;
+  v_pts   integer[] := array[10, 30, 55, 80, 100];
+begin
+  if p_tiers is null or p_answers is null or v_n > 5 or coalesce(array_length(p_answers, 1), 0) <> v_n then
+    raise exception 'bad_tiers';
+  end if;
+  foreach v_tier in array p_tiers loop
+    if v_tier is null or v_tier < -1 or v_tier > 4 then
+      raise exception 'bad_tiers';
+    end if;
+    if v_tier >= 0 then
+      v_score := v_score + v_pts[v_tier + 1];
+    end if;
+  end loop;
+  foreach v_ans in array p_answers loop
+    if v_ans is null or char_length(v_ans) > 60 then
+      raise exception 'bad_answers';
+    end if;
+  end loop;
+
+  select * into d from public.duels x where x.code = upper(p_code) for update;
+  if not found then
+    raise exception 'not_found';
+  end if;
+  if d.live then
+    raise exception 'not_allowed';
+  end if;
+
+  if d.a_secret = p_secret then
+    if d.a_status <> 'playing' or coalesce(array_length(d.a_tiers, 1), 0) > v_n then
+      raise exception 'not_allowed';
+    end if;
+    update public.duels x
+       set a_tiers = p_tiers, a_answers = p_answers, a_score = v_score,
+           a_status = case when p_done then 'done' else 'playing' end,
+           a_done_at = case when p_done then now() else null end
+     where x.code = d.code;
+  elsif d.b_secret is not null and d.b_secret = p_secret then
+    if d.b_status <> 'playing' or coalesce(array_length(d.b_tiers, 1), 0) > v_n then
+      raise exception 'not_allowed';
+    end if;
+    update public.duels x
+       set b_tiers = p_tiers, b_answers = p_answers, b_score = v_score,
+           b_status = case when p_done then 'done' else 'playing' end,
+           b_done_at = case when p_done then now() else null end
+     where x.code = d.code;
+  else
+    raise exception 'not_allowed';
+  end if;
+  return v_score;
+end;
+$$;
+
+-- Duell lesen (Ergebnis-Ansicht, Historie). Neu: ob es ein Live-Duell ist, der Raum-Code,
+-- solange noch nicht gespielt wird, und eine offene Revanche.
+create or replace function public.get_duel(p_code text, p_player text)
+returns json
+language plpgsql security definer set search_path = public stable
+as $$
+declare
+  d      public.duels;
+  v_role text;
+  v_fin  boolean;
+begin
+  select * into d from public.duels x where x.code = upper(p_code);
+  if not found then
+    return null;
+  end if;
+  v_role := case when d.a_player = p_player then 'a'
+                 when d.b_player is not null and d.b_player = p_player then 'b'
+                 else null end;
+  v_fin := d.a_status = 'done' and coalesce(d.b_status, '') = 'done';
+  return json_build_object(
+    'code', d.code,
+    'qids', d.qids,
+    'role', v_role,
+    'final', v_fin,
+    'live', d.live,
+    'room', case when d.live and d.live_q_at is null then d.room end,
+    'rematch', (select json_build_object('code', n.code, 'room', n.room, 'by', n.a_name, 'by_pid', public.hh_pid(n.a_player))
+                  from public.duels n
+                 where n.code = d.rematch and n.live and n.live_q_at is null),
+    'a', json_build_object(
+      'name', d.a_name, 'pid', public.hh_pid(d.a_player), 'status', d.a_status, 'n', coalesce(array_length(d.a_tiers, 1), 0),
+      'tiers',   case when v_fin or (v_role = 'a' and not d.live) then to_json(d.a_tiers) end,
+      'answers', case when v_fin or (v_role = 'a' and not d.live) then to_json(d.a_answers) end,
+      'score',   case when v_fin or (v_role = 'a' and not d.live) then d.a_score end),
+    'b', case when d.b_name is null then null else json_build_object(
+      'name', d.b_name, 'pid', public.hh_pid(d.b_player), 'status', d.b_status, 'n', coalesce(array_length(d.b_tiers, 1), 0),
+      'tiers',   case when v_fin or (v_role = 'b' and not d.live) then to_json(d.b_tiers) end,
+      'answers', case when v_fin or (v_role = 'b' and not d.live) then to_json(d.b_answers) end,
+      'score',   case when v_fin or (v_role = 'b' and not d.live) then d.b_score end) end
+  );
+end;
+$$;
+
+revoke all on function public.hh_live_ms(text) from public, anon, authenticated;
+revoke all on function public.hh_live_tick(text, text, boolean) from public, anon, authenticated;
+revoke all on function public.hh_live_json(public.duels, text) from public, anon, authenticated;
+revoke all on function public.hh_live_sweep() from public, anon, authenticated;
+revoke all on function public.live_create(text, text[]) from public;
+revoke all on function public.live_join(text, text) from public;
+revoke all on function public.live_leave(text, text) from public;
+revoke all on function public.live_poll(text, text, boolean) from public;
+revoke all on function public.live_answer(text, text, integer, smallint, text) from public;
+revoke all on function public.live_rematch(text, text, text[]) from public;
+revoke all on function public.join_duel(text, text, text) from public;
+revoke all on function public.save_duel(text, uuid, smallint[], text[], boolean) from public;
+revoke all on function public.get_duel(text, text) from public;
+grant execute on function public.live_create(text, text[]) to anon, authenticated;
+grant execute on function public.live_join(text, text) to anon, authenticated;
+grant execute on function public.live_leave(text, text) to anon, authenticated;
+grant execute on function public.live_poll(text, text, boolean) to anon, authenticated;
+grant execute on function public.live_answer(text, text, integer, smallint, text) to anon, authenticated;
+grant execute on function public.live_rematch(text, text, text[]) to anon, authenticated;
+grant execute on function public.join_duel(text, text, text) to anon, authenticated;
+grant execute on function public.save_duel(text, uuid, smallint[], text[], boolean) to anon, authenticated;
+grant execute on function public.get_duel(text, text) to anon, authenticated;
+
 -- Supabase die neuen Funktionen sofort bekannt machen.
 notify pgrst, 'reload schema';

@@ -806,6 +806,98 @@ textarea.share{background:var(--surface-2)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .sidecharm svg, :root:not([data-theme="light"]) .footcharm svg, :root:not([data-theme="light"]) .sprev.ch svg{filter:drop-shadow(0 0 1.3px rgba(255,240,192,.85))} }
 :root[data-theme="dark"] .sidecharm svg, :root[data-theme="dark"] .footcharm svg, :root[data-theme="dark"] .sprev.ch svg{filter:drop-shadow(0 0 1.3px rgba(255,240,192,.85))}
 @media (max-width:480px){ .shopgrid,.shopgrid.charms{grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px} .sprev.ch,.sprev.ch svg{height:92px} .nmprev{font-size:19px} .profbtn .pblvl{display:none} .tokbtn{padding:3px 9px 3px 4px; font-size:13px; min-height:36px} .tokbtn .coin{width:22px; height:22px} }
+/* Live-Duell: Raum-Code, Kopf mit beiden Spielern, Doppel-Schacht */
+.livecard{gap:18px}
+.roomcode{display:flex; gap:10px; justify-content:center; padding:4px 0}
+.roomcode span{width:64px; height:82px; display:grid; place-items:center; border:2px solid var(--ink); border-radius:16px; background:var(--surface-2); font-family:var(--font-mono); font-weight:700; font-size:46px; line-height:1; box-shadow:4px 4px 0 var(--shade); animation:rise .4s both}
+.roomcode span:nth-child(2){animation-delay:.06s} .roomcode span:nth-child(3){animation-delay:.12s} .roomcode span:nth-child(4){animation-delay:.18s}
+.lvchoice{display:grid; gap:12px}
+.lvopt{display:flex; flex-direction:column; gap:10px; align-items:flex-start; padding:16px; border:2px solid var(--ink); border-radius:16px; background:var(--surface-2); min-width:0}
+.lvor{align-self:center; justify-self:center; font-weight:700; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.lvcode{width:132px; font-family:var(--font-mono); font-size:26px; font-weight:700; letter-spacing:.28em; text-align:center; padding:8px 4px 8px 14px; border:2px solid var(--ink); border-radius:12px; background:var(--surface); color:var(--ink)}
+.lvcode::placeholder{color:var(--muted); opacity:.45}
+@media (min-width:700px){ .lvchoice{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:stretch} }
+.lvbar{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; align-items:center; padding:10px 12px; border:2px solid var(--ink); border-radius:16px; background:var(--surface-2)}
+.lvp{display:flex; align-items:center; gap:10px; min-width:0}
+.lvp.b{flex-direction:row-reverse}
+.lvpn{display:flex; flex-direction:column; gap:1px; min-width:0}
+.lvp.b .lvpn{align-items:flex-end; text-align:right}
+.lvnm{display:flex; align-items:center; gap:6px; min-width:0; max-width:100%}
+.lvp.b .lvnm{flex-direction:row-reverse}
+.lvnm .tagname{font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.lvnm .you{background:var(--ink); color:var(--surface); flex:none}
+.lvst{font-size:12px; font-weight:600; color:var(--muted); min-height:17px; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis}
+.lvst.ok{color:var(--ok)}
+.lvst.off{color:var(--warn)}
+.lvp.pulse .av{animation:bump .5s ease-out}
+.lvmid{display:flex; flex-direction:column; align-items:center; padding:0 6px}
+.lvmid b{font-family:var(--font-mono); font-size:26px; line-height:1.1; font-variant-numeric:tabular-nums; display:inline-block}
+.lvmid b.bump{animation:bump .45s ease-out}
+.lvmid small{font-size:11px; color:var(--muted)}
+.lvcount{font-family:var(--font-display); font-weight:800; font-size:68px; line-height:1; min-width:1.1em; text-align:center; display:inline-block}
+.lvcount.pop{animation:bump .5s ease-out}
+.lvlock{display:flex; gap:12px; align-items:center; padding:14px 16px; border:2px solid var(--ink); border-radius:14px; background:color-mix(in srgb, var(--ok) 18%, var(--surface))}
+.lvlock.miss{background:var(--surface-2)}
+.lvlock > svg{width:32px; height:32px; flex:none; color:var(--ok)}
+.lvlock.miss > svg{color:var(--muted)}
+.lvlk{font-size:16px}
+.lvlk q{font-family:var(--font-display); font-weight:800; font-size:22px; quotes:"„" "“"; overflow-wrap:anywhere}
+.lvwait{display:flex; gap:10px; align-items:center; font-weight:600; color:var(--muted)}
+.lvhurry{display:flex; gap:8px; align-items:center; font-size:15px; color:var(--accent)}
+.lvhurry svg{width:18px; height:18px; flex:none}
+.lvqt{font-family:var(--font-display); font-weight:800; font-size:clamp(19px, 4.6vw, 28px); line-height:1.15; letter-spacing:-.01em; text-wrap:balance}
+.duo{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; width:100%; max-width:860px; margin-inline:auto}
+.lvdig{display:flex; flex-direction:column; cursor:default; min-width:0; transition:opacity .35s ease, transform .35s ease, box-shadow .35s ease}
+.lvdig .digtop{padding:8px 10px; gap:8px}
+.lvdn{display:flex; align-items:center; gap:7px; min-width:0}
+.lvdn .tagname{font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.lvdn .you{background:var(--ink); color:var(--surface); flex:none}
+.lvdig .dd b{font-size:19px}
+.lvdig .band{height:46px; padding:0 10px 0 54px; gap:8px}
+.lvdig .band .bn{font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lvdig .probe{width:54px}
+.lvdig .probe svg{left:3px; width:46px}
+.lvans{flex:1; display:grid; place-items:center; min-height:44px; padding:8px 10px; border-top:2px solid var(--ink); background:var(--surface-2); font-weight:700; text-align:center; overflow-wrap:anywhere}
+.lvans q{quotes:"„" "“"}
+.lvdig.landed .lvans{animation:rise .35s both}
+.lvdig.won{transform:translateY(-3px); box-shadow:4px 4px 0 var(--shade), 0 0 0 3px var(--ok), 0 0 30px color-mix(in srgb, var(--ok) 55%, transparent)}
+.lvdig.lost{opacity:.7}
+.lvdig.same .lvans q{text-decoration:line-through; text-decoration-thickness:2px}
+.lvdig.miss .band{filter:grayscale(1); opacity:.55}
+.lvdig.miss .probe{opacity:.35}
+.lvverdict{display:flex; flex-direction:column; gap:2px; align-items:center; text-align:center; padding:12px 14px; border:2px solid var(--ink); border-radius:14px; background:var(--surface-2); visibility:hidden}
+.lvverdict.show{visibility:visible; animation:vpop .45s cubic-bezier(.2,1.5,.4,1) both}
+.lvverdict b{font-family:var(--font-display); font-weight:800; font-size:22px; line-height:1.15}
+.lvverdict span{font-size:15px}
+.lvverdict.win{background:linear-gradient(135deg, var(--thread), var(--thread-2)); color:var(--thread-ink)}
+.lvnext{display:flex; align-items:center; gap:12px}
+.lvnbar{flex:1; height:8px; border-radius:999px; background:color-mix(in srgb, var(--ink) 14%, transparent); overflow:hidden}
+.lvnbar i{display:block; height:100%; width:100%; border-radius:999px; background:var(--accent)}
+.lvnext span{font-family:var(--font-mono); font-size:13px; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums}
+.lvnet{color:var(--warn)}
+.rmnote{align-items:center; font-size:16px; border-color:var(--accent)}
+.rmnote span{flex:1; min-width:0}
+#rematchBox:empty{display:none}
+.rmnote svg{margin-top:0}
+@media (max-width:560px){
+  .lvdig .band{grid-template-columns:20px auto; justify-content:start; padding:0 6px 0 50px; height:42px}
+  .lvdig .band .bn{display:none}
+  .lvdig .band svg{width:20px; height:20px}
+  .lvdig .probe{width:50px}
+  .lvdig .probe svg{width:42px}
+  .lvdn .av{display:none}
+  .lvans{font-size:15px; padding:8px 6px; hyphens:auto}
+  .lvbar{padding:8px 10px; gap:6px}
+  .lvp .av{--s:32px}
+  .lvnm .tagname{font-size:15px}
+  .roomcode span{width:56px; height:72px; font-size:40px}
+}
+@media (min-width:960px){
+  .lvdig .band{height:58px}
+  .lvdig .band .bn{font-size:17px}
+  .lvbar{padding:12px 18px}
+  .lvnm .tagname{font-size:19px}
+}
 /* Kopfzeile: wie viele Spieler gerade online sind */
 .brandbox{display:flex; flex-direction:column; align-items:flex-start; min-width:0}
 .onpill{display:inline-flex; align-items:center; gap:6px; margin:-4px 0 0 44px; font-size:11.5px; font-weight:700; line-height:1.3; letter-spacing:.01em; color:var(--muted); white-space:nowrap}
@@ -2990,7 +3082,7 @@ function updateBoard(){
   if (state.err) list.insertAdjacentHTML("beforeend", `<p class="hint">Die Liste ist eventuell nicht ganz aktuell.</p>`);
 }
 
-/* ======================= Duell per Link ======================= */
+/* ======================= Duell: gemeinsame Teile und die älteren Duelle per Link ======================= */
 const DUKEY="heuhaufen:duels";
 let duelLocal={}; try{ const d=JSON.parse(localStorage.getItem(DUKEY)||"{}"); if (d && typeof d==="object" && !Array.isArray(d)) duelLocal=d; }catch(e){}
 function saveDuelLocal(){
@@ -3039,15 +3131,15 @@ function duelStartHTML(){
   const recent=Object.entries(duelLocal).sort((a,b)=>(b[1].at||0)-(a[1].at||0)).slice(0,4);
   return `<article class="mode m-duel" id="duelCard">
     <div class="mart" aria-hidden="true">${I_VS}</div>
-    <span class="label">1 gegen 1</span>
+    <span class="label">1 gegen 1 · live</span>
     <h3>Duell</h3>
-    <p>Fordere jemanden heraus: Ihr spielt dieselben 5 Fragen, die seltenere Antwort gewinnt. Ein Link genügt.</p>
+    <p>Spielt gleichzeitig gegeneinander: Raum öffnen, 4-stelligen Code weitergeben, los. Wer die seltenere Antwort findet, holt die Runde.</p>
     <div class="acts"><button class="btn light" id="duelGo" type="button">Duell starten</button>
       ${recent.length?`<span class="drecent"><span class="hint">Deine Duelle:</span>${recent.map(([c])=>`<button class="chipbtn" type="button" data-code="${esc(c)}">${esc(c)}</button>`).join("")}</span>`:""}</div>
   </article>`;
 }
 function wireDuelStart(){
-  if ($("duelGo")) $("duelGo").onclick=()=>{ if (!account()) return openAuth({to:"duelnew"}, "register", "Fürs Duell brauchst du ein Profil – so sieht dein Gegner, wer ihn herausfordert."); state={screen:"duelnew"}; render(); };
+  if ($("duelGo")) $("duelGo").onclick=()=>{ if (!account()) return openAuth({to:"duelnew"}, "register", "Fürs Duell brauchst du ein Profil – so sieht dein Gegner, gegen wen er spielt."); state={screen:"duelnew"}; render(); };
   document.querySelectorAll("#duelCard [data-code]").forEach(b=>{ b.onclick=()=>openDuel(b.dataset.code); });
 }
 
@@ -3062,37 +3154,54 @@ function wireDuelGo(run){
   };
 }
 function renderDuelNew(){
-  if (dailyAvailable() && !account()){ openAuth({to:"duelnew"}, "register", "Fürs Duell brauchst du ein Profil – so sieht dein Gegner, wer ihn herausfordert."); return; }
+  if (dailyAvailable() && !account()){ openAuth({to:"duelnew"}, "register", "Fürs Duell brauchst du ein Profil – so sieht dein Gegner, gegen wen er spielt."); return; }
   if (!dailyAvailable()){
     view.innerHTML=`<section class="card stack narrow"><span class="label">Duell</span><h2>Das Duell ist noch nicht eingerichtet.</h2><p class="hint">Dafür braucht die Seite die Verbindung zur Datenbank.</p><div class="row"><button class="btn ghost" id="menu3" type="button">Zum Start</button></div></section>`;
     $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
     return;
   }
-  view.innerHTML=`<section class="card stack narrow">
-    <span class="label">Duell · 1 gegen 1</span>
-    <h2>${state.rematch?"Revanche!":"Fordere jemanden heraus."}</h2>
-    <ul class="rules">
-      <li>${I_VS}<span><b>Ihr spielt dieselben 5 Fragen</b> – du zuerst, dann schickst du den Link weiter.</span></li>
-      <li>${I_TROPHY}<span><b>Pro Frage gewinnt die seltenere Antwort.</b> Wer mehr Fragen holt, gewinnt das Duell. Bei Gleichstand zählen die Punkte.</span></li>
-      <li>${I_FLAG}<span><b>Gleiche Antwort zählt für keinen.</b> Das Naheliegende ist also doppelt riskant.</span></li>
-    </ul>
-    <div class="row"><button class="btn" id="duGo" type="button">Fragen auslosen & los</button><span class="hint">Du spielst als <b>${esc(account()?account().name:"")}</b></span></div>
+  view.innerHTML=`<section class="card stack narrow livecard">
+    <span class="label">Duell · live, 1 gegen 1</span>
+    <h2>Spielt gleichzeitig gegeneinander.</h2>
+    ${LIVE_RULES()}
+    <div class="lvchoice">
+      <div class="lvopt"><span class="label">Neuer Raum</span><button class="btn" id="lvCreate" type="button">Raum erstellen</button><span class="hint">Du bekommst einen 4-stelligen Code für deinen Gegner.</span></div>
+      <div class="lvor">oder</div>
+      <form class="lvopt" id="lvJoinForm" autocomplete="off"><label class="label" for="lvCode">Code eingeben</label>
+        <div class="row"><input class="lvcode" id="lvCode" name="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" aria-label="4-stelliger Raum-Code"><button class="btn" type="submit" id="lvJoin">Beitreten</button></div>
+        <span class="hint">Den Code bekommst du von deinem Gegner.</span></form>
+    </div>
     <p class="fb bad" id="duErr" role="alert"></p>
-    <div class="row"><button class="btn ghost small" id="menu3" type="button">Zurück</button></div>
+    <div class="row"><button class="btn ghost small" id="menu3" type="button">Zurück</button><span class="hint">Du spielst als <b>${esc(account()?account().name:"")}</b></span></div>
   </section>`;
   $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
-  wireDuelGo(()=>createDuel(account().name));
-}
-async function createDuel(tag){
-  const qi=pickDuelQs();
-  let r;
-  try{ r=await rpc("create_duel", {p_player:local.playerId, p_name:tag, p_qids:qi.map(qidOf)}); }
-  catch(e){ return duelErr(e); }
-  const row=Array.isArray(r) ? r[0] : r;
-  if (!row || !row.code || !row.secret) return duelErr(null);
-  duelLocal[row.code]={role:"a", secret:row.secret, at:Date.now(), status:"playing"}; saveDuelLocal();
-  beginWith(qi.map(getQ), "", null, {code:row.code, role:"a", secret:row.secret, me:tag});
-  return "";
+  const cBtn=$("lvCreate"), form=$("lvJoinForm"), inp=$("lvCode"), jBtn=$("lvJoin");
+  let busy=false;
+  const lock=on=>{ busy=on; cBtn.disabled=on; jBtn.disabled=on; };
+  const say=m=>{ const e=$("duErr"); if (e) e.textContent=m; };
+  cBtn.onclick=async()=>{
+    if (busy) return;
+    lock(true); say("");
+    const msg=await createRoom();
+    if (msg && state.screen==="duelnew"){ say(msg); lock(false); }
+  };
+  inp.oninput=()=>{
+    const v=inp.value.replace(/\D/g,"").slice(0,4);
+    if (v!==inp.value) inp.value=v;
+    if (v.length===4 && !busy){ if (form.requestSubmit) form.requestSubmit(); else jBtn.click(); }
+  };
+  form.onsubmit=async ev=>{
+    ev.preventDefault();
+    if (busy) return;
+    const room=inp.value.replace(/\D/g,"").slice(0,4);
+    if (!roomOk(room)){ say("Der Code hat 4 Ziffern."); inp.focus(); return; }
+    lock(true); say("");
+    let r=null, e2=null;
+    try{ r=await rpc("live_join", {p_player:local.playerId, p_room:room}); }catch(e){ e2=e; }
+    if (state.screen!=="duelnew") return;
+    if (e2 || !r || !r.code){ say(liveErr(e2)); lock(false); inp.focus(); inp.select(); return; }
+    openLive(r.code);
+  };
 }
 
 /* Duell öffnen – über den Link oder die Startseite */
@@ -3102,12 +3211,18 @@ const fetchDuel=code=>rpc("get_duel", {p_code:code, p_player:local.playerId});
 async function openDuel(raw){
   const code=cleanCode(raw);
   if (!dailyAvailable()){ state={screen:"duelnew"}; render(); return; }
+  if (roomOk(code)) return joinRoom(code);          // vier Ziffern: der Raum-Code eines Live-Duells
   state={screen:"duelload", code}; render();
   await dchain;
   let d=null, err=null;
   try{ d=await fetchDuel(code); }catch(e){ err=e; }
   if (state.screen!=="duelload" || state.code!==code) return;
   if (err || !d){ state={screen:"duelerr", msg:duelErr(err||{code:"not_found"})}; render(); return; }
+  if (d.live && !d.final){
+    if (d.role) return openLive(d.code);            // läuft noch und ich bin dabei: wieder hinein
+    if (d.room && !d.b) return joinRoom(d.room);
+    return showDuel(d);                             // nur zuschauen
+  }
   // Abgebrochener eigener Versuch: zählt mit dem bisherigen Stand.
   const mine=duelLocal[code], side=d.role && d[d.role];
   if (mine && mine.secret && mine.status!=="done" && side && side.status==="playing"){
@@ -3123,7 +3238,18 @@ async function openDuel(raw){
 function showDuel(d){
   stopDuelPoll();
   state={screen:"duel", code:d.code, data:d}; render();
-  if (d.final) return;
+  if (d.final){
+    if (!(d.live && d.role)) return;
+    let n=0;                                        // nach einem Live-Duell: Will der andere eine Revanche?
+    duelPoll=setInterval(async()=>{
+      if (state.screen!=="duel" || state.code!==d.code || ++n>90){ stopDuelPoll(); return; }
+      try{
+        const x=await fetchDuel(d.code);
+        if (x && state.screen==="duel" && state.code===d.code && JSON.stringify(x.rematch||null)!==JSON.stringify(state.data.rematch||null)){ state.data.rematch=x.rematch||null; paintRematch(); }
+      }catch(e){}
+    }, 2500);
+    return;
+  }
   duelPoll=setInterval(async()=>{
     if (state.screen!=="duel" || state.code!==d.code){ stopDuelPoll(); return; }
     try{
@@ -3265,16 +3391,20 @@ function renderDuel(){
           return `<li class="drow"><div class="dq"><span>${j+1}.</span> ${esc(i===undefined?"":BANK[i].q)}</div>${duelAnsHTML(t, mine.answers?.[j]||"", false, false)}</li>`; }).join("")}</ol></div>` : ""}`;
   }
   view.innerHTML=`<section class="card stack narrow duelcard${anim?" anim":""}" id="duelCardBox">
-    <span class="label">Duell · Code ${esc(d.code)}</span>
+    <span class="label">${d.live ? "Live-Duell" : "Duell · Code "+esc(d.code)}</span>
     <h2 id="duelHead">${anim?"Die Auswertung …":head}</h2>
+    <div id="rematchBox"></div>
     ${body}
+    ${d.live && d.final && role ? `<p class="fb bad" id="rmErr" role="alert" style="min-height:0"></p>` : ""}
     <div class="row">
       <button class="btn" id="duRematch" type="button">${role && d.final ? "Revanche" : role ? "Neues Duell" : "Eigenes Duell starten"}</button>
       <button class="btn ghost" id="freeGo" type="button">Classic spielen</button>
       <button class="btn ghost small" id="menu3" type="button">Zum Start</button>
     </div>
   </section>`;
-  $("duRematch").onclick=()=>{ state={screen:"duelnew", rematch:!!(role && d.final)}; render(); };
+  const liveFin=!!(d.live && d.final && role);
+  $("duRematch").onclick=liveFin ? ()=>liveRematch(d.code) : ()=>{ state={screen:"duelnew"}; render(); };
+  if (liveFin) paintRematch();
   $("freeGo").onclick=startRound;
   $("menu3").onclick=()=>{ state={screen:"start"}; render(); };
   if (role==="a" && !B) wireShare(d.code, A.name);
@@ -3315,6 +3445,458 @@ async function animateDuel(an, d){
   sfx(!o.winner ? "draw" : (won || !d.role) ? "win" : "lose");
   if (wside && (won || !d.role)) confetti(wside, 64);
   buzz(won ? [30,40,80] : 20);
+}
+
+/* ======================= Live-Duell: Raum mit Code, gemeinsame Uhr, Doppel-Schacht =======================
+   Die Uhr führt die Datenbank: Sie nennt den Start jeder Frage und jeder Auflösung. Die Seite fragt den
+   Stand etwa einmal pro Sekunde ab (live_poll), rechnet die Serverzeit auf die eigene Uhr um und zeigt
+   danach Countdown, Frage und Auflösung. Was der Gegner geantwortet hat, kommt erst zur Auflösung. */
+const roomOk=v=>/^\d{4}$/.test(String(v||""));
+const LIVE_ERR={not_found:"Diesen Raum gibt es nicht (mehr). Prüf den Code.", taken:"In diesem Raum sind schon zwei Spieler.",
+  need_account:"Dafür brauchst du ein Profil. Bitte melde dich an.", too_many:"Du hast heute schon sehr viele Duelle gestartet. Morgen geht’s weiter.",
+  network:"Keine Verbindung. Prüf dein Internet und versuch es nochmal.", not_done:"Das Duell läuft noch.",
+  gone:"Dieses Duell nutzt Fragen, die deine Seite nicht kennt. Lade die Seite neu und versuch es nochmal."};
+const liveErr=e=>(e && e.status===404) ? "Das Live-Duell ist noch nicht eingerichtet: In Supabase muss einmal das Skript setup.sql laufen."
+  : LIVE_ERR[e && e.code] || "Das hat nicht geklappt. Versuch es nochmal.";
+let live=null;
+function setDuelParam(code){ try{ history.replaceState(null, "", location.pathname+"?duell="+encodeURIComponent(code)+location.hash); }catch(e){} }
+const liveNow=()=>Date.now()+(live ? live.off : 0);
+
+/* Raum öffnen / betreten */
+async function createRoom(){
+  let r;
+  try{ r=await rpc("live_create", {p_player:local.playerId, p_qids:pickDuelQs().map(qidOf)}); }catch(e){ return liveErr(e); }
+  if (!r || !r.code) return liveErr(null);
+  openLive(r.code);
+  return "";
+}
+async function joinRoom(room){
+  if (!dailyAvailable()){ state={screen:"duelnew"}; render(); return; }
+  if (!account()) return openAuth({to:"join", code:room}, "register", "Zum Mitspielen brauchst du ein Profil – das geht in ein paar Sekunden.");
+  state={screen:"duelload", code:room}; render();
+  let r=null, err=null;
+  try{ r=await rpc("live_join", {p_player:local.playerId, p_room:room}); }catch(e){ err=e; }
+  if (state.screen!=="duelload" || state.code!==room) return;
+  if (err || !r || !r.code){ state={screen:"duelerr", msg:liveErr(err)}; render(); return; }
+  openLive(r.code);
+}
+function openLive(code){
+  liveStop();
+  state={screen:"live", code, tries:[], fb:"", fbBad:false};
+  live={code, d:null, qs:null, off:0, samples:[], t:null, iv:null, busy:false, again:false, fails:0, lastOk:Date.now(), keep:false,
+        sig:"", qi:-1, mine:{}, played:{}, oppAns:{}, tok:null, cnt:null, tickSec:null, rk:-1, fresh:false};
+  setDuelParam(code);
+  render();
+  live.iv=setInterval(liveFrame, 100);
+  livePoll();
+}
+let liveTitle0=null;
+function liveTitle(t){ try{ if (t){ if (liveTitle0==null) liveTitle0=document.title; document.title=t+" – Heuhaufen"; } else if (liveTitle0!=null){ document.title=liveTitle0; liveTitle0=null; } }catch(e){} }
+function liveStop(){
+  const L=live; if (!L) return;
+  live=null; liveTitle(null);
+  clearTimeout(L.t); clearInterval(L.iv);
+  if (L.tok) L.tok.skip=true;
+  // Vor dem Start weggegangen: Der Gastgeber schließt damit den Raum, der Gast macht seinen Platz frei.
+  if (!L.keep && L.d && L.d.role && L.d.q_at==null) rpc("live_leave", {p_code:L.code, p_player:local.playerId}).catch(()=>{});
+}
+
+/* Abfragen */
+function liveDelay(){
+  const ph=liveView().ph;
+  return ph==="revwait" ? 250 : ph==="reveal" ? 2500 : ph==="ask" ? 900 : ph==="load" ? 600 : 1000;
+}
+function liveKick(){ const L=live; if (!L) return; if (L.busy){ L.again=true; return; } clearTimeout(L.t); L.t=null; livePoll(); }
+async function livePoll(){
+  const L=live; if (!L || L.busy) return;
+  L.busy=true; clearTimeout(L.t); L.t=null;
+  const t0=Date.now(); let d, err=null;
+  const here=!!(L.d && L.d.q_at!=null) || document.visibilityState!=="hidden";      // vor dem Start zählt nur, wer die Seite vor sich hat
+  try{ d=await rpc("live_poll", {p_code:L.code, p_player:local.playerId, p_here:here}); }catch(e){ err=e; }
+  const t1=Date.now();
+  if (live!==L) return;
+  L.busy=false;
+  if (err){
+    L.fails++;
+    if (err.status===404 || (!L.d && L.fails>=3)){ L.keep=true; state={screen:"duelerr", msg:liveErr(err)}; render(); return; }
+  } else if (!d){
+    const guest=L.d && L.d.role==="b";
+    L.keep=true; state={screen:"duelerr", msg:guest ? "Der Raum wurde geschlossen." : "Diesen Raum gibt es nicht mehr."}; render(); return;
+  } else if (!d.role){
+    L.keep=true; const code=L.code; liveStop(); openDuel(code); return;      // nicht (mehr) dabei: nur zuschauen
+  } else { L.fails=0; L.lastOk=t1; liveApply(d, t0, t1); }
+  if (live!==L) return;
+  const again=L.again; L.again=false;
+  L.t=setTimeout(livePoll, again ? 0 : liveDelay());
+}
+function liveApply(d, t0, t1){
+  const L=live; if (!L || !d || typeof d.now!=="number") return;
+  if (t1>=t0){
+    L.samples.push({rtt:t1-t0, off:d.now-(t0+t1)/2}); if (L.samples.length>8) L.samples.shift();
+    L.off=L.samples.reduce((b,s)=>s.rtt<b.rtt ? s : b).off;       // die schnellste Abfrage misst die Uhr am genauesten
+  }
+  if (L.d && d.now<L.d.now) return;                               // ältere Antwort, die später ankam
+  const prev=L.d; L.d=d;
+  if (!L.qs){
+    L.qs=(d.qids||[]).map(id=>{ const i=qIndex(id); return i===undefined ? null : getQ(i); });
+    if (L.qs.length!==ROUND_LEN || L.qs.some(q=>!q)){ L.keep=true; state={screen:"duelerr", msg:LIVE_ERR.gone}; render(); return; }
+  }
+  if (prev && !prev.b && d.b){ sfx("up"); buzz(30); if (document.visibilityState==="hidden") liveTitle(`${d.b.name} ist da!`); }   // der Gegner ist da
+  if (d.q_at!=null && !duelLocal[d.code]){ duelLocal[d.code]={role:d.role, secret:null, at:Date.now(), status:"done"}; saveDuelLocal(); }
+  liveFrame();
+}
+
+/* Wo stehen wir gerade? Aus dem letzten Stand der Datenbank und der Uhr berechnet. */
+function liveView(){
+  const L=live, d=L && L.d;
+  if (!d) return {ph:"load"};
+  if (!d.b) return {ph:"wait"};
+  if (d.q_at==null) return {ph:"ready"};
+  const now=liveNow();
+  let i=d.i, q=d.q_at, rev=d.rev_at;
+  for (;;){
+    if (now<q) return {ph:"count", i, q};
+    const revT = rev!=null ? rev : q+d.ask_ms+d.grace_ms;
+    if (now<revT) return {ph:"ask", i, q, end:q+d.ask_ms, revT};
+    if (!(d.open>i)) return {ph:"revwait", i, q, end:q+d.ask_ms, revT};     // Auflösung fällig, die Antworten fehlen noch
+    if (now<revT+d.reveal_ms) return {ph:"reveal", i, revT, next:revT+d.reveal_ms, last:i>=ROUND_LEN-1};
+    if (i>=ROUND_LEN-1) return {ph:"done"};
+    i++; q=revT+d.reveal_ms; rev=null;                                       // die nächste Frage beginnt nach fester Zeit
+  }
+}
+function liveMine(i){
+  const L=live; if (!L) return null;
+  if (L.mine[i]) return L.mine[i];
+  const me=L.d && L.d.role && L.d[L.d.role];
+  if (me && Array.isArray(me.tiers) && me.tiers.length>i) return (L.mine[i]={tier:me.tiers[i], name:(me.answers||[])[i]||"", typed:"", how:me.tiers[i]<0?"pass":"", sent:true});
+  return null;
+}
+function liveRows(d, n){
+  const cut=x=>({tiers:((x && x.tiers)||[]).slice(0,n), answers:((x && x.answers)||[]).slice(0,n)});
+  return duelOutcome({qids:(d.qids||[]).slice(0,n), a:cut(d.a), b:cut(d.b)});
+}
+
+/* Zehnmal pro Sekunde: Phase prüfen, bei einem Wechsel neu zeichnen, sonst nur Uhr und Status nachführen. */
+function liveFrame(){
+  const L=live; if (!L || state.screen!=="live") return;
+  const v=liveView();
+  if (v.ph==="done"){ const code=L.code; L.keep=true; liveStop(); refreshMe(); openDuel(code); return; }
+  if (v.ph==="ask" || v.ph==="revwait"){
+    if (L.qi!==v.i){ L.qi=v.i; L.tickSec=null; L.fresh=true; state.tries=[]; state.fb=""; state.fbBad=false; sfx("go"); liveKick(); }
+    if (!liveMine(v.i) && liveNow()>=v.end){ L.mine[v.i]={tier:-1, name:"", typed:"", how:"timeout", sent:true}; sfx("timeout"); buzz([60,50,60]); }
+    if (v.ph==="revwait" && L.rk!==v.i){ L.rk=v.i; liveKick(); }
+  }
+  const mine = v.ph==="ask" || v.ph==="revwait" ? liveMine(v.i) : null;
+  const sig=[v.ph==="revwait" ? "ask" : v.ph, v.i, mine ? (mine.how||"ok") : "", L.d && L.d.b ? L.d.b.pid : ""].join("|");
+  if (sig!==L.sig){ L.sig=sig; renderLive(v); }
+  else liveDyn(v);
+}
+
+function renderLive(v){
+  const L=live; if (!L) return;
+  if (L.tok){ L.tok.skip=true; L.tok=null; }
+  const d=L.d;
+  if (!d){ view.innerHTML=`<section class="card stack narrow"><div class="loading"><span class="spin" aria-hidden="true"></span><span>Der Raum wird geöffnet …</span></div></section>`; return; }
+  v=v||liveView();
+  sideOverride={pids:[d.a.pid, d.b ? d.b.pid : null]};
+  if (v.ph==="wait") liveLobby(d);
+  else if (v.ph==="ready" || v.ph==="count") liveReady(d, v);
+  else if (v.ph==="ask" || v.ph==="revwait") liveAsk(d, v);
+  else if (v.ph==="reveal") liveShow(d, v);
+  else return;
+  loadAvatars(view);
+  paintCharms();
+  liveDyn(v);
+}
+
+/* Raum offen: Code zeigen und auf den Gegner warten */
+function liveLobby(d){
+  const room=String(d.room||"");
+  view.innerHTML=`<section class="card stack narrow livecard">
+    <span class="label">Live-Duell · dein Raum</span>
+    <h2>Gib deinem Gegner diesen Code.</h2>
+    <div class="roomcode" role="img" aria-label="Raum-Code ${esc(room.split("").join(" "))}">${room.split("").map(c=>`<span>${esc(c)}</span>`).join("")}</div>
+    <p class="lede">Er tippt ihn unter <b>Duell</b> bei „Code eingeben“ ein. Oder du schickst ihm den Link – dann ist er mit einem Tipp im Raum.</p>
+    <div class="sharebox">
+      <span class="label">Link zum Raum</span>
+      <div class="linkrow"><input id="duelLink" readonly value="${esc(duelLink(room))}" aria-label="Link zum Raum"><button class="btn small" id="duelShare" type="button">Link teilen</button></div>
+      <p class="hint" id="duelShareMsg">Sobald ihr beide im Raum seid, startet der Countdown von selbst.</p>
+    </div>
+    <div class="loading"><span class="spin" aria-hidden="true"></span><span>Warte auf deinen Gegner …</span></div>
+    <p class="hint lvnet" id="lvNet" hidden>Verbindung unterbrochen – ich versuche es weiter …</p>
+    <div class="row"><button class="btn ghost small" id="lvLeave" type="button">Raum schließen</button></div>
+  </section>`;
+  $("lvLeave").onclick=goStart;
+  const btn=$("duelShare"), inp=$("duelLink"), msg=$("duelShareMsg");
+  const url=duelLink(room), text=`${d.a.name} fordert dich bei Heuhaufen zum Live-Duell heraus! Raum-Code: ${room}`;
+  inp.onfocus=()=>inp.select();
+  btn.onclick=async()=>{
+    if (navigator.share){ try{ await navigator.share({title:"Heuhaufen: Live-Duell", text, url}); return; }catch(e){ if (e && e.name==="AbortError") return; } }
+    try{ await navigator.clipboard.writeText(text+" "+url); msg.textContent="Link kopiert – jetzt einfügen und abschicken."; }
+    catch(e){ inp.focus(); inp.select(); msg.textContent="Link markiert – jetzt kopieren."; }
+  };
+}
+
+/* Beide im Raum – und der Countdown */
+const LIVE_RULES=()=>`<ul class="rules">
+      <li>${I_CLOCK}<span><b>Dieselbe Frage zur selben Zeit:</b> 5 Fragen, je 30 Sekunden, die Uhr läuft für euch beide.</span></li>
+      <li>${I_CHECK}<span><b>Du siehst nur, dass dein Gegner geantwortet hat</b> – nicht, was.</span></li>
+      <li>${I_TROPHY}<span><b>Bei der Auflösung sinken beide Nadeln gleichzeitig.</b> Wer tiefer landet, holt die Runde. Gleiche Antwort zählt für keinen.</span></li>
+    </ul>`;
+function liveReady(d, v){
+  const role=d.role, cnt=v.ph==="count";
+  const side=(x,k)=>`<div class="vside${role===k?" me":""}">${avatarHTML(x.pid, x.name, "l")}<span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${role===k?`<span class="you">Du</span>`:""}<small id="lvrs_${k}"></small></div>`;
+  view.innerHTML=`<section class="card stack narrow livecard">
+    <span class="label">Live-Duell${cnt ? "" : " · Raum "+esc(d.room||"")}</span>
+    <h2>${cnt ? "Macht euch bereit!" : "Ihr seid beide im Raum."}</h2>
+    <div class="vs">${side(d.a,"a")}<div class="vmid">${cnt ? `<b class="lvcount" id="lvCount" role="timer">${Math.max(1, Math.ceil((v.q-liveNow())/1000))}</b>` : `<span class="vsbadge">VS</span>`}</div>${side(d.b,"b")}</div>
+    <p class="lede" id="lvSub" style="font-size:17px"></p>
+    ${LIVE_RULES()}
+    <p class="hint lvnet" id="lvNet" hidden>Verbindung unterbrochen – ich versuche es weiter …</p>
+    ${cnt ? "" : `<div class="row"><button class="btn ghost small" id="lvLeave" type="button">${role==="a" ? "Raum schließen" : "Raum verlassen"}</button></div>`}
+  </section>`;
+  if ($("lvLeave")) $("lvLeave").onclick=goStart;
+}
+
+/* Kopf des Spiels: beide Spieler, Rundenstand, Status */
+function liveBarHTML(d, sc){
+  const side=(x,k)=>`<div class="lvp ${k}${d.role===k?" me":""}" id="lvp_${k}">${avatarHTML(x.pid, x.name, "m")}<div class="lvpn"><span class="lvnm"><span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${d.role===k?`<span class="you">Du</span>`:""}</span><small class="lvst" id="lvst_${k}"></small></div></div>`;
+  return `<div class="lvbar">${side(d.a,"a")}<div class="lvmid"><b id="lvRounds">${sc.wa}:${sc.wb}</b><small>Runden</small></div>${side(d.b,"b")}</div>`;
+}
+
+/* Die Frage läuft */
+function liveAsk(d, v){
+  const L=live, Q=L.qs[v.i], mine=liveMine(v.i), opp=d[d.role==="a"?"b":"a"];
+  const pips=L.qs.map((_,j)=>`<span class="pip${j<v.i?" done":j===v.i?" now":""}"></span>`).join("");
+  const left=Math.max(0, (v.end-liveNow())/1000);
+  const known=Q.entries.filter(e=>!e.ai).length;
+  const fresh=L.fresh; L.fresh=false;
+  let body;
+  if (!mine){
+    body=`<div class="pbody stack">
+      <form class="ans" id="ansForm" autocomplete="off">
+        <input id="ans" name="ans" type="text" placeholder="Deine Antwort …" aria-label="Deine Antwort" autocapitalize="sentences" spellcheck="false" enterkeyhint="send" maxlength="80">
+        <button class="btn" type="submit" id="send">Antworten</button>
+      </form>
+      <div class="fb${state.fbBad?" bad":""}" id="fb" role="status" aria-live="polite">${esc(state.fb||"")}</div>
+      <p class="lvhurry" id="lvHurry" hidden>${I_CLOCK}<span><b>${esc(opp.name)}</b> hat schon geantwortet!</span></p>
+      <div class="row" style="justify-content:space-between; align-items:flex-start">
+        <div class="tries" id="tries">${state.tries.map(t=>`<span class="try">${esc(t)}</span>`).join("")}</div>
+        <button class="btn ghost small" id="pass" type="button">Passen</button>
+      </div></div>`;
+  } else {
+    const hit=mine.tier>=0;
+    body=`<div class="pbody stack">
+      <div class="lvlock${hit?"":" miss"}">${hit ? I_CHECK : mine.how==="pass" ? I_FLAG : I_CLOCK}
+        <div><span class="label">${hit ? "Deine Antwort steht" : mine.how==="pass" ? "Gepasst" : mine.how==="late" ? "Zu spät" : "Zeit um"}</span>
+        <div class="lvlk">${hit ? `<q>${esc(mine.typed||mine.name)}</q>` : mine.how==="late" ? "Die Antwort kam nach dem Schlusspfiff an." : "Diese Runde ohne Antwort."}</div></div>
+      </div>
+      <p class="lvwait"><span class="spin" aria-hidden="true"></span><span id="lvWait"></span></p></div>`;
+  }
+  view.innerHTML=`<section class="card stack playcard livecard${fresh?" qenter":""}">
+    ${liveBarHTML(d, liveRows(d, v.i))}
+    <div class="qhead">
+      <span class="chip">${catIcon(Q.k)}${esc(Q.k)}</span>
+      <div class="row" style="gap:10px"><div class="pips" aria-hidden="true">${pips}</div><span class="prog">Live-Duell · Frage ${v.i+1}/${ROUND_LEN}</span></div>
+    </div>
+    <div class="playgrid">
+    <div class="pq">
+    <div class="qrow">
+      <div class="cat" aria-hidden="true">${catIcon(Q.k)}</div>
+      <div class="qtext">${questionHTML(Q.q)}</div>
+      ${ringHTML(left, "")}
+    </div>
+    <p class="known">${I_BOOK}<span>Wir kennen ${known} richtige Antworten.</span></p>
+    </div>
+    ${body}
+    <aside class="pside preview">${shaftPreviewHTML(false)}</aside>
+    </div>
+    <p class="hint lvnet" id="lvNet" hidden>Verbindung unterbrochen – ich versuche es weiter …</p>
+  </section>`;
+  if (!mine){
+    const inp=$("ans");
+    inp.focus({preventScroll:true});
+    $("ansForm").onsubmit=ev=>{ ev.preventDefault(); liveSubmit(inp.value); };
+    $("pass").onclick=()=>liveAnswer(v.i, -1, "", "", "pass");
+  }
+}
+function liveSubmit(val){
+  const L=live; if (!L) return;
+  const v=liveView();
+  if (v.ph!=="ask" || liveMine(v.i) || liveNow()>=v.end) return;
+  const Q=L.qs[v.i], typed=String(val).trim(), res=judge(Q, typed);
+  if (res.type==="empty") return;
+  if (res.type==="ok") return liveAnswer(v.i, res.e.tier, res.e.name, typed, "");
+  if (res.type==="nope") return bad(res.msg+" Versuch’s nochmal.", typed);
+  bad(`„${typed}“ steht nicht auf unserer Liste. Probier was anderes.`, typed);
+}
+function liveAnswer(i, tier, name, typed, how){
+  const L=live; if (!L || liveMine(i)) return;
+  const m={tier, name, typed, how:how||"", sent:false}; L.mine[i]=m;
+  sfx(tier>=0 ? "lock" : "pass"); buzz(15);
+  liveFrame();
+  (async function send(n){
+    const t0=Date.now(); let d;
+    try{ d=await rpc("live_answer", {p_code:L.code, p_player:local.playerId, p_i:i, p_tier:tier, p_answer:tier>=0 ? String(name).slice(0,60) : ""}); }
+    catch(e){
+      if (live!==L) return;
+      if (e.code==="already"){ m.sent=true; return; }
+      if (e.code==="too_late"){ if (tier>=0){ L.mine[i]={tier:-1, name:"", typed:"", how:"late", sent:true}; liveFrame(); } return; }
+      if (e.code==="network" || (e.status>=500 && e.status<600)){ if (n<40) setTimeout(()=>{ if (live===L && !L.played[i]) send(n+1); }, 600); }
+      return;
+    }
+    if (live!==L) return;
+    m.sent=true; liveApply(d, t0, Date.now());
+  })(0);
+}
+
+/* Auflösung: zwei Schächte, beide Nadeln sinken gleichzeitig */
+function liveVerdict(d, r){
+  const me=d.role==="a" ? 1 : 2, A=esc(d.a.name), B=esc(d.b.name);
+  if (r.same) return {cls:"same", t:"Gleiche Antwort!", s:"Die zählt für keinen."};
+  if (r.ta<0 && r.tb<0) return {cls:"none", t:"Keiner trifft.", s:"Diese Runde bleibt ohne Sieger."};
+  if (!r.win) return {cls:"tie", t:"Gleich tief!", s:"Beide Nadeln stecken in derselben Schicht – unentschieden."};
+  const wn=r.win===1 ? A : B, ln=r.win===1 ? B : A, lt=r.win===1 ? r.tb : r.ta;
+  if (r.win===me) return {cls:"win", t:"Die Runde geht an dich!", s:lt<0 ? `${ln} hat nichts gefunden.` : "Deine Nadel steckt tiefer."};
+  return {cls:"lose", t:`Die Runde geht an ${wn}.`, s:(r.win===1 ? r.tb : r.ta)<0 ? "Du hast diesmal nichts gefunden." : `Die Nadel von ${wn} steckt tiefer.`};
+}
+const liveAnsHTML=(t, a)=>t>=0 && a ? `<q>${esc(a)}</q>` : `<span class="hint">keine Antwort</span>`;
+function liveShow(d, v){
+  const L=live, i=v.i, Q=L.qs[i], o=liveRows(d, i+1), r=o.rows[i], role=d.role;
+  const animate=!REDUCED && !L.played[i] && liveNow()-v.revT<3500 && document.visibilityState!=="hidden";
+  L.played[i]=true;
+  const cls=(k,t)=>animate ? "" : (t<0 ? " miss" : "")+(r.same ? " same" : (r.win===(k==="a"?1:2)) ? " won" : r.win ? " lost" : "");
+  const dig=(x,k,t,a,p)=>`<div class="dig lvdig${cls(k,t)}" id="lvdig_${k}">
+      <div class="digtop"><div class="lvdn">${avatarHTML(x.pid, x.name, "s")}<span class="tagname"${nmAttr(x.pid)}>${esc(x.name)}</span>${role===k?`<span class="you">Du</span>`:""}</div><div class="dd right"><b id="lvpts_${k}">+${animate?0:p}</b></div></div>
+      <div class="shaft" id="lvshaft_${k}">
+        ${TIERS.map((x2,j)=>`<div class="band${!animate && j===t?" active":""}${!animate && j<t?" passed":""}" data-i="${j}" style="${tierVars(j)}">${tierIcon(j)}<span class="bn">${x2.name}</span><span class="bp">+${x2.pts}</span></div>`).join("")}
+        <div class="probe" id="lvprobe_${k}" style="top:${!animate && t>=0 ? (t+.5)*20 : 0}%">${PROBE_SVG}</div>
+      </div>
+      <div class="lvans" id="lvans_${k}">${animate ? `<span class="hint">sinkt …</span>` : liveAnsHTML(t, a)}</div>
+    </div>`;
+  const vd=liveVerdict(d, r), myT=role==="a" ? r.ta : r.tb;
+  const rare=rarerPicks(Q, myT, null).slice(0,3);
+  view.innerHTML=`<section class="card stack playcard livecard">
+    ${liveBarHTML(d, animate ? liveRows(d, i) : o)}
+    <div class="qhead">
+      <span class="chip">${catIcon(Q.k)}${esc(Q.k)}</span>
+      <span class="prog">Live-Duell · Auflösung ${i+1}/${ROUND_LEN}</span>
+    </div>
+    <div class="lvqt">${esc(Q.q)}</div>
+    <div class="duo" id="lvDuo">${dig(d.a,"a",r.ta,r.aa,r.pa)}${dig(d.b,"b",r.tb,r.ab,r.pb)}</div>
+    <div class="lvverdict ${vd.cls}${animate?"":" show"}" id="lvVerdict" role="status"><b>${vd.t}</b><span>${vd.s}</span></div>
+    <div class="lvnext"><div class="lvnbar"><i id="lvNbar"></i></div><span id="lvNtxt"></span></div>
+    <div class="stack lvrare" id="lvRare" style="gap:8px"${animate?" hidden":""}>${rare.length ? `<span class="label">${myT<0 ? "Das hätte Punkte gebracht" : "Noch seltener wären gewesen"}</span>${chipsHTML(rare)}` : `<p class="your"><b>Seltener geht’s nicht.</b> Du hast die Nadel gefunden.</p>`}</div>
+    <p class="hint lvnet" id="lvNet" hidden>Verbindung unterbrochen – ich versuche es weiter …</p>
+  </section>`;
+  if (animate) liveRun(d, r, o);
+}
+async function liveRun(d, r, o){
+  const L=live, tok={skip:false}; L.tok=tok;
+  const alive=()=>live===L && L.tok===tok && state.screen==="live";
+  const role=d.role, SPEED=1/620;                       // Schichten pro Millisekunde – für beide Nadeln gleich
+  const sides=[["a", r.ta, r.aa], ["b", r.tb, r.ab]].map(([k,t,a])=>({k, t, a, target:t>=0 ? t+.5 : 0, landed:t<0, entered:-1,
+    dig:$("lvdig_"+k), shaft:$("lvshaft_"+k), probe:$("lvprobe_"+k), pts:$("lvpts_"+k), ans:$("lvans_"+k)}));
+  if (sides.some(s=>!s.dig || !s.shaft || !s.probe)) return;
+  sides.forEach(s=>{ s.bands=[...s.shaft.querySelectorAll(".band")]; if (s.t<0){ s.dig.classList.add("miss"); if (s.ans) s.ans.innerHTML=liveAnsHTML(-1, ""); } });
+  await pause(550, tok);
+  if (!alive()) return;
+  const t0=performance.now();
+  await new Promise(res=>{ (function f(now){
+    if (!alive()) return res();
+    const el=tok.skip ? 1e9 : now-t0; let all=true, layer=-1, land=-1;
+    for (const s of sides){
+      if (s.t<0 || s.landed) continue;
+      const y=Math.min(s.target, el*SPEED), band=Math.min(4, Math.floor(y));
+      s.probe.style.top=(y*20)+"%";
+      if (y>0.02 && band>s.entered){
+        s.entered=band;
+        s.bands.forEach((b,j)=>{ b.classList.toggle("active", j===band); b.classList.toggle("passed", j<band); });
+        if (s.pts){ s.pts.textContent="+"+TIERS[band].pts; s.pts.classList.remove("bump"); void s.pts.offsetWidth; s.pts.classList.add("bump"); }
+        if (band>0 && !tok.skip) strawBurst(s.shaft, band, 8);
+        layer=Math.max(layer, band);
+      }
+      if (y>=s.target){
+        s.landed=true; s.dig.classList.add("landed");
+        if (s.ans) s.ans.innerHTML=liveAnsHTML(s.t, s.a);
+        land=Math.max(land, s.t);
+      } else all=false;
+    }
+    if (land>=0){ sfx("land", land); buzz(18); }
+    else if (layer>=0 && !tok.skip) sfx("layer", layer);
+    if (all) res(); else requestAnimationFrame(f);
+  })(t0); });
+  if (!alive()) return;
+  await pause(420, tok);
+  if (!alive()) return;
+  const me=role==="a" ? 1 : 2, won=r.win===me;
+  sides.forEach(s=>{ const w=r.win===(s.k==="a"?1:2); s.dig.classList.add(r.same ? "same" : w ? "won" : r.win ? "lost" : "even"); });
+  if (r.same) sides.forEach(s=>{ if (s.pts) s.pts.textContent="+0"; });
+  const vd=$("lvVerdict"); if (vd) vd.classList.add("show");
+  const rounds=$("lvRounds"); if (rounds){ rounds.textContent=o.wa+":"+o.wb; if (r.win){ rounds.classList.remove("bump"); void rounds.offsetWidth; rounds.classList.add("bump"); } }
+  const rare=$("lvRare"); if (rare) rare.hidden=false;
+  sfx(won ? "point" : "nopoint");
+  if (won){ buzz([20,40,60]); cheerCharms(); const mine=sides.find(s=>s.k===role); if (mine && mine.t>=3) confetti(mine.dig, mine.t===4 ? 60 : 28); }
+  if (L.tok===tok) L.tok=null;
+}
+
+/* Uhr, Status und Countdown nachführen, ohne neu zu zeichnen */
+function liveDyn(v){
+  const L=live, d=L && L.d; if (!d) return;
+  const now=liveNow(), role=d.role, ok=role==="a" ? "b" : "a", opp=d[ok];
+  const net=$("lvNet"); if (net) net.hidden=Date.now()-L.lastOk<4500;
+  const st=(k, txt, cls)=>{ const el=$("lvst_"+k); if (!el) return; if (el.textContent!==txt) el.textContent=txt; el.className="lvst"+(cls ? " "+cls : ""); };
+  if (v.ph==="ready"){
+    ["a","b"].forEach(k=>{ const el=$("lvrs_"+k); if (el) el.textContent=(k===role || d[k].here) ? "bereit" : "gerade nicht da"; });
+    const sub=$("lvSub"); if (sub) sub.textContent=opp && opp.here ? "Gleich geht’s los …" : `${opp ? opp.name : "Dein Gegner"} hat die Seite gerade nicht offen. Es geht los, sobald ihr beide da seid.`;
+  } else if (v.ph==="count"){
+    const n=Math.max(1, Math.ceil((v.q-now)/1000)), el=$("lvCount");
+    if (el && el.textContent!==String(n)){ el.textContent=n; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
+    if (L.cnt!==n){ L.cnt=n; sfx("tick"); }
+    const sub=$("lvSub"); if (sub && !sub.textContent) sub.textContent="Gleich kommt die erste Frage.";
+  } else if (v.ph==="ask" || v.ph==="revwait"){
+    const left=Math.max(0, v.end-now), mine=liveMine(v.i), sec=Math.ceil(left/1000);
+    const ring=$("ring"), fg=$("rfg"), num=$("tnum");
+    if (fg) fg.setAttribute("stroke-dashoffset", (CIRC*(1-left/d.ask_ms)).toFixed(2));
+    if (num) num.textContent=sec;
+    if (ring){ ring.classList.toggle("low", !mine && left>0 && left<8000); ring.classList.toggle("frozen", left<=0); }
+    if (!mine && left>0 && sec<=5 && sec!==L.tickSec){ L.tickSec=sec; sfx("tick"); }
+    const oa=!!opp && v.i===d.i && !!opp.answered;
+    if (oa && !L.oppAns[v.i]){ L.oppAns[v.i]=true; if (v.ph==="ask"){ sfx("opp"); const p=$("lvp_"+ok); if (p){ p.classList.remove("pulse"); void p.offsetWidth; p.classList.add("pulse"); } } }
+    const sm=!!(NARROW && NARROW.matches);                    // auf dem Handy ist neben dem Rundenstand wenig Platz
+    st(role, mine ? (mine.tier>=0 ? (sm ? "✓ steht" : "✓ Antwort steht") : mine.how==="pass" ? "gepasst" : (sm ? "–" : "keine Antwort")) : "du bist dran", mine && mine.tier>=0 ? "ok" : "");
+    st(ok, oa ? (sm ? "✓ fertig" : "✓ hat geantwortet") : !opp.here ? (sm ? "offline" : "nicht verbunden") : left<=0 ? (sm ? "–" : "keine Antwort") : "überlegt …", oa ? "ok" : !opp.here ? "off" : "");
+    const hurry=$("lvHurry"); if (hurry) hurry.hidden=!oa;
+    const w=$("lvWait"); if (w){ const txt=(v.ph==="revwait" || (oa && mine) || left<=0) ? "Gleich kommt die Auflösung …" : `Warte auf ${opp.name} … noch ${sec} s`; if (w.textContent!==txt) w.textContent=txt; }
+  } else if (v.ph==="reveal"){
+    const left=Math.max(0, v.next-now), bar=$("lvNbar"), txt=$("lvNtxt");
+    if (bar) bar.style.width=(100*left/d.reveal_ms).toFixed(1)+"%";
+    if (txt){ const t=`${v.last ? "Endstand" : "Nächste Frage"} in ${Math.max(1, Math.ceil(left/1000))} s`; if (txt.textContent!==t) txt.textContent=t; }
+    st("a", "", ""); st("b", "", "");
+  }
+}
+try{ document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState!=="hidden"){ liveTitle(null); if (live) liveKick(); } }); }catch(e){}
+
+/* Revanche nach einem Live-Duell */
+async function liveRematch(code){
+  const btn=$("duRematch"), err=$("rmErr");
+  if (btn){ if (btn.disabled) return; btn.disabled=true; }
+  if ($("rmGo")) $("rmGo").disabled=true;
+  if (err) err.textContent="";
+  let r=null, e2=null;
+  try{ r=await rpc("live_rematch", {p_code:code, p_player:local.playerId, p_qids:pickDuelQs().map(qidOf)}); }catch(e){ e2=e; }
+  if (state.screen!=="duel" || state.code!==code) return;
+  if (e2 || !r || !r.code){ if ($("duRematch")) $("duRematch").disabled=false; if ($("rmGo")) $("rmGo").disabled=false; if ($("rmErr")) $("rmErr").textContent=liveErr(e2); return; }
+  openLive(r.code);
+}
+function paintRematch(){
+  const box=$("rematchBox"), d=state.data; if (!box || !d) return;
+  const rm=d.rematch, mineToo=rm && rm.by_pid===myPid();
+  if (!rm || mineToo){ box.innerHTML=""; return; }
+  box.innerHTML=`<p class="note rmnote">${I_VS}<span><b>${esc(rm.by)}</b> will eine Revanche!</span><button class="btn small" id="rmGo" type="button">Annehmen</button></p>`;
+  $("rmGo").onclick=()=>liveRematch(d.code);
+  const btn=$("duRematch"); if (btn) btn.textContent="Revanche annehmen";
+  sfx("up");
 }
 
 /* ======================= Spielerprofile & Match-Historie ======================= */
@@ -3625,7 +4207,9 @@ const SFX={
   draw:()=>{ tone(392,0,.2,"triangle",.09); tone(392,.22,.3,"triangle",.09); },
   up:()=>{ [523,784,1047,1568].forEach((f,k)=>tone(f, k*.07, .22, "sine", .09)); },
   point:()=>tone(659,0,.11,"triangle",.08,880),
-  nopoint:()=>tone(330,0,.11,"triangle",.06,262)
+  nopoint:()=>tone(330,0,.11,"triangle",.06,262),
+  lock:()=>{ tone(523,0,.07,"triangle",.08); tone(784,.07,.13,"triangle",.08); },
+  opp:()=>{ tone(988,0,.06,"sine",.06); tone(1319,.08,.11,"sine",.06); }
 };
 function sfx(name, arg){ try{ if (soundOn() && SFX[name]) SFX[name](arg); }catch(e){} }
 function buzz(p){ try{ if (soundOn() && navigator.vibrate) navigator.vibrate(p); }catch(e){} }
@@ -4519,6 +5103,7 @@ function render(){
   if (digTok){ digTok.skip=true; digTok=null; }
   if (state.screen!=="board") stopBoard();
   if (state.screen!=="duel") stopDuelPoll();
+  if (state.screen!=="live") liveStop();
   setBest();
   if (state.screen!==lastScreen){
     lastScreen=state.screen;
@@ -4540,6 +5125,7 @@ function render(){
   if (state.screen==="duelerr") return renderDuelErr();
   if (state.screen==="duelinvite") return renderDuelInvite();
   if (state.screen==="duel") return renderDuel();
+  if (state.screen==="live") return renderLive();
   if (state.screen==="profload") return renderProfLoad();
   if (state.screen==="profile") return renderProfile();
   if (state.screen==="auth") return renderAuth();
