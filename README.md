@@ -1,6 +1,6 @@
 # Heuhaufen
 
-Das Ratespiel, bei dem seltene Antworten die meisten Punkte bringen – mit Tagesrätsel, Duellen, Profilen mit Profilbild, Level und Rangliste. Das freie Spiel geht ohne Anmeldung.
+Das Ratespiel, bei dem seltene Antworten die meisten Punkte bringen – mit Tagesrätsel, Duellen, Profilen mit Profilbild, Level und Rangliste. Der Classic-Modus geht ohne Anmeldung.
 
 **Hier spielen:** https://simonlblt.github.io/heuhaufen/
 
@@ -44,19 +44,19 @@ Nach einem Update der Seite, das neue Funktionen bringt, einfach dieses Skript n
 
 ## Was es gibt
 
-- **Freies Spiel:** 200 Fragen, beliebig viele Runden, auch ohne Profil.
+- **Classic:** die normale Runde mit 5 Fragen (aus 200), beliebig oft spielbar, auch ohne Profil.
 - **Tagesrätsel:** 5 Fragen, für alle dieselben, ein Versuch pro Profil und Tag, mit Bestenliste.
 - **Duell (1 gegen 1):** Du spielst 5 Fragen und schickst einen Link weiter. Pro Frage gewinnt die seltenere Antwort, gleiche Antworten zählen für keinen.
 - **Profile:** Name (2–10 Zeichen) und Passwort, Anmeldung auf jedem Gerät. Mit Profilbild (Symbol oder eigenes Foto), Statistiken, Match-Historie, Abzeichen und Link zum Teilen (`?spieler=…`).
-- **Level und Rangliste:** Jede Runde bringt XP. Tagesrätsel und Duell zählen mit vollen Punkten, das freie Spiel mit den halben. Dazu gibt es 100 XP je Duellsieg und 150 XP je Tagessieg (sobald der Tag vorbei ist). Level 2 gibt es ab 200 XP, Level 3 ab 500, Level 5 ab 1.400, Level 10 ab 5.400.
+- **Level und Rangliste:** Jede Runde bringt XP. Tagesrätsel und Duell zählen mit vollen Punkten, Classic mit den halben. Dazu gibt es 100 XP je Duellsieg und 150 XP je Tagessieg (sobald der Tag vorbei ist). Level 2 gibt es ab 200 XP, Level 3 ab 500, Level 5 ab 1.400, Level 10 ab 5.400.
 - **Ton und Design:** Oben rechts lassen sich die Töne ausschalten und das helle oder dunkle Design wählen.
 
 ## Gut zu wissen
 
 - **Profilbilder:** Vom Foto wird im Browser nur ein kleiner runder Ausschnitt (192 × 192 Pixel) erzeugt und gespeichert; das Original verlässt das Gerät nicht. Profilbilder sind für alle sichtbar und werden nicht geprüft. Ein Bild entfernen kannst du im SQL Editor: `update accounts set avatar = null where name_key = lower('NAME');`
 - **Ein Versuch pro Profil:** Jedes Profil kann das Tagesrätsel einmal am Tag spielen – egal auf welchem Gerät.
-- **Punkte:** Die Datenbank berechnet Punkte und XP selbst aus den erreichten Stufen und lässt Ergebnisse nur wachsen. Im freien Spiel zählen höchstens eine Runde alle 20 Sekunden und 60 Runden pro Tag. Ganz verhindern lässt sich Schummeln bei so einem Spiel aber nicht.
+- **Punkte:** Die Datenbank berechnet Punkte und XP selbst aus den erreichten Stufen und lässt Ergebnisse nur wachsen. In Classic zählen höchstens eine Runde alle 20 Sekunden und 60 Runden pro Tag. Ganz verhindern lässt sich Schummeln bei so einem Spiel aber nicht.
 - **Namen:** kommen immer aus dem Profil, niemand kann sich als jemand anderes eintragen. Es gibt keinen Wortfilter. Einträge löschen kannst du im Supabase-Dashboard unter **Table Editor → scores**, **duels** bzw. **accounts**.
 - **Passwort vergessen:** Es gibt keine E-Mail-Wiederherstellung. Im SQL Editor kannst du ein neues Passwort setzen: `update accounts set pw_hash = extensions.crypt('NEUES-PASSWORT', extensions.gen_salt('bf', 8)) where name_key = lower('NAME');`
 - **Supabase-Gratisprojekte** werden nach längerer Zeit ohne Nutzung pausiert. Dann im Dashboard auf **Restore** klicken.
-- **Ohne Supabase** (leere `config.js`) läuft das freie Spiel trotzdem – nur ohne Tagesrätsel, Duelle und Profile.
+- **Ohne Supabase** (leere `config.js`) läuft Classic trotzdem – nur ohne Tagesrätsel, Duelle und Profile.
