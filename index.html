@@ -5242,7 +5242,13 @@ function saveLobbyPref(p){ try{ localStorage.setItem(LBKEY, JSON.stringify(p)); 
 async function createRoom(pub, opp, nq){
   let r;
   const q=Math.min(LOBBY_MAX_Q, Math.max(LOBBY_MIN_Q, nq|0 || ROUND_LEN));
-  try{ r=await rpc("lobby_create", {p_player:local.playerId, p_qids:pickDuelQs(LOBBY_MAX_Q).map(qidOf), p_public:!!pub, p_cap:Math.min(LOBBY_MAX_OPP, Math.max(1, opp|0))+1, p_nq:q}); }catch(e){ return liveErr(e); }
+  const args={p_player:local.playerId, p_qids:pickDuelQs(LOBBY_MAX_Q).map(qidOf), p_public:!!pub, p_cap:Math.min(LOBBY_MAX_OPP, Math.max(1, opp|0))+1, p_nq:q};
+  try{ r=await rpc("lobby_create", args); }
+  catch(e){
+    if (!(e && e.status===404)) return liveErr(e);
+    // Datenbank noch auf altem Stand (setup.sql nicht neu gelaufen): alte Funktion, immer 5 Fragen
+    try{ r=await rpc("lobby_create", {p_player:args.p_player, p_qids:args.p_qids.slice(0, ROUND_LEN), p_public:args.p_public, p_cap:args.p_cap}); }catch(e2){ return liveErr(e2); }
+  }
   if (!r || !r.code) return liveErr(null);
   openLive(r.code);
   return "";
@@ -5469,7 +5475,7 @@ function liveLobby(d){
       try{ r=await rpc("lobby_settings", Object.assign({p_code:L.code, p_player:local.playerId, p_cap:null, p_public:null, p_nq:null}, args)); }catch(e){ e2=e; }
       if (live!==L) return;
       L.cfgBusy=false;
-      if (e2){ L.sig=""; liveFrame(); say(liveErr(e2)); return; }
+      if (e2){ L.sig=""; liveFrame(); say(e2.status===404 ? "Einstellungen in der Lobby ändern geht erst, wenn in Supabase einmal das neue Skript setup.sql gelaufen ist." : liveErr(e2)); return; }
       sfx("tap"); liveApply(r, t0, Date.now());
     };
     $("cfCapM").onclick=()=>cfg({p_cap:d.cap-1});
@@ -5864,6 +5870,9 @@ async function liveRematch(code){
   if (err) err.textContent="";
   let r=null, e2=null;
   try{ r=await rpc("lobby_again", {p_code:code, p_player:local.playerId, p_qids:pickDuelQs(LOBBY_MAX_Q).map(qidOf)}); }catch(e){ e2=e; }
+  if (e2 && e2.code==="bad_questions"){                                                // alte Datenbank: nimmt genau 5 Fragen
+    e2=null; try{ r=await rpc("lobby_again", {p_code:code, p_player:local.playerId, p_qids:pickDuelQs(ROUND_LEN).map(qidOf)}); }catch(e){ e2=e; }
+  }
   if (state.screen!==scr || state.code!==code) return;
   if (e2 && e2.code==="not_found"){ state={screen:"duelnew"}; render(); return; }       // älteres Ergebnis ohne Lobby: einfach eine neue öffnen
   if (e2 || !r || !r.code){ if ($("duRematch")) $("duRematch").disabled=false; if ($("rmGo")) $("rmGo").disabled=false; if ($("rmErr")) $("rmErr").textContent=liveErr(e2); return; }
