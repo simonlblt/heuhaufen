@@ -1547,7 +1547,8 @@ grant execute on function public.get_looks(text[]) to anon, authenticated;
 -- ============================================================
 -- Ablauf: Jemand öffnet eine Lobby (lobby_create) – privat (nur mit dem 4-stelligen Code oder Link)
 -- oder öffentlich (steht in der Liste, lobby_list) – und legt fest, gegen wie viele Leute gespielt
--- wird (1 bis 8 Gegner). Der Gastgeber kann Spieler entfernen (lobby_kick) und startet das Spiel
+-- wird (1 bis 8 Gegner) und wie viele Fragen es gibt (3 bis 10). Bis zum Start kann der Gastgeber
+-- das in der Lobby ändern (lobby_settings), Spieler entfernen (lobby_kick) und startet das Spiel
 -- (lobby_start). Danach läuft jede Frage für alle zur selben Zeit; die Uhr führt die Datenbank.
 -- Was die anderen geantwortet haben, gibt sie erst zur Auflösung heraus. Alle Übergänge (Auflösung,
 -- nächste Frage, Ende) werden beim Abfragen aus den Zeitstempeln berechnet; es läuft kein Dienst im
@@ -1594,6 +1595,7 @@ drop function if exists public.hh_live_tick(text, text);
 drop function if exists public.hh_live_tick(text, text, boolean);
 drop function if exists public.hh_live_json(public.duels, text);
 drop function if exists public.hh_live_ms(text);
+drop function if exists public.lobby_create(text, text[], boolean, integer);   -- ältere Fassung ohne Fragenzahl
 
 -- Eine Lobby und danach das Spiel darin.
 create table if not exists public.lobbies (
@@ -1603,7 +1605,8 @@ create table if not exists public.lobbies (
   host        text not null,
   is_public   boolean not null default false,
   cap         smallint not null check (cap between 2 and 9),  -- Plätze insgesamt (Gastgeber + Gegner)
-  qids        text[] not null check (array_length(qids, 1) = 5),
+  qids        text[] not null,                                -- ausgeloste Fragen (bis zu 10)
+  nq          smallint not null default 5,                    -- davon gespielt: die ersten nq
   kicked      text[] not null default '{}',
   q_i         smallint not null default 0,                    -- aktuelle Frage (0 bis 4)
   q_at        timestamptz,                                    -- Start der aktuellen Frage (leer: Lobby noch offen)
@@ -1615,6 +1618,15 @@ create table if not exists public.lobbies (
 );
 -- Der Raum-Code muss nur unter den offenen Lobbys eindeutig sein; nach dem Start ist er wieder frei.
 create unique index if not exists lobbies_room_idx on public.lobbies (room) where q_at is null;
+-- Fragenzahl (3 bis 10). Ältere Fassungen hatten genau 5 Fragen – für vorhandene Tabellen nachrüsten.
+alter table public.lobbies add column if not exists nq smallint not null default 5;
+alter table public.lobbies drop constraint if exists lobbies_qids_check;
+alter table public.lobbies add constraint lobbies_qids_check check (array_length(qids, 1) between 3 and 10);
+alter table public.lobbies drop constraint if exists lobbies_nq_check;
+alter table public.lobbies add constraint lobbies_nq_check check (nq between 3 and 10 and nq <= array_length(qids, 1));
+-- Ein Spiel zu zweit wird als Duell gespeichert – auch mit mehr oder weniger als 5 Fragen.
+alter table public.duels drop constraint if exists duels_qids_check;
+alter table public.duels add constraint duels_qids_check check (array_length(qids, 1) between 3 and 10);
 create index if not exists lobbies_host_idx on public.lobbies (host, created_at);
 
 create table if not exists public.lobby_players (
@@ -1655,7 +1667,8 @@ language sql stable security definer set search_path = public
 as $$
   with a as (       -- eine Zeile je Spieler und Frage
     select p.player, i, coalesce(p.tiers[i], -1) as t, lower(coalesce(p.answers[i], '')) as ans
-      from public.lobby_players p cross join generate_series(1, 5) i
+      from public.lobby_players p
+      cross join generate_series(1, (select l.nq from public.lobbies l where l.code = p_code)) i
      where p.code = p_code
   ), v as (         -- gleiche Antworten zählen für keinen
     select a.*,
@@ -1710,7 +1723,7 @@ begin
       insert into public.duels (code, created_at, qids, live,
                                 a_player, a_name, a_tiers, a_answers, a_score, a_status, a_done_at,
                                 b_player, b_secret, b_name, b_tiers, b_answers, b_score, b_status, b_done_at)
-      values (l.code, l.created_at, l.qids, true,
+      values (l.code, l.created_at, l.qids[1:l.nq], true,
               a.player, v_an, a.tiers, a.answers, a.score, 'done', coalesce(l.done_at, now()),
               b.player, gen_random_uuid(), v_bn, b.tiers, b.answers, b.score, 'done', coalesce(l.done_at, now()))
       on conflict (code) do nothing;
@@ -1772,7 +1785,7 @@ begin
        set tiers   = p.tiers   || array(select (-1)::smallint from generate_series(1, l.q_i + 1 - cardinality(p.tiers))),
            answers = p.answers || array(select ''::text from generate_series(1, l.q_i + 1 - cardinality(p.answers)))
      where p.code = l.code and (cardinality(p.tiers) < l.q_i + 1 or cardinality(p.answers) < l.q_i + 1);
-    if l.q_i >= 4 then
+    if l.q_i >= l.nq - 1 then
       l.done := true; l.done_at := l.rev_at; v_touch := true;
       update public.lobbies x set done = true, done_at = l.done_at, rev_at = l.rev_at where x.code = l.code;
       perform public.hh_lobby_finish(l.code);
@@ -1810,10 +1823,11 @@ begin
     else 'ask' end;
   v_open := case when v_phase in ('open', 'count') then 0
                  when v_phase = 'ask' then l.q_i
-                 when v_phase = 'done' then 5
+                 when v_phase = 'done' then l.nq
                  else l.q_i + 1 end;
   return json_build_object(
     'code', l.code, 'room', l.room, 'public', l.is_public, 'cap', l.cap,
+    'nq', l.nq, 'nq_max', cardinality(l.qids),
     'phase', v_phase, 'i', l.q_i, 'open', v_open, 'final', l.done,
     'in', exists (select 1 from public.lobby_players p where p.code = l.code and p.player = p_player),
     'host', l.host = p_player,
@@ -1823,7 +1837,7 @@ begin
     'rev_at', (extract(epoch from l.rev_at) * 1000)::bigint,
     'count_ms', public.hh_lobby_ms('count'), 'ask_ms', public.hh_lobby_ms('ask'),
     'grace_ms', public.hh_lobby_ms('grace'), 'reveal_ms', public.hh_lobby_ms('reveal'),
-    'qids', l.qids,
+    'qids', l.qids[1:l.nq],
     'players', (select coalesce(json_agg(json_build_object(
           'pid', public.hh_pid(p.player), 'name', coalesce(k.name, '???'),
           'host', p.player = l.host, 'me', p.player = p_player,
@@ -1890,9 +1904,10 @@ begin
 end;
 $$;
 
--- Lobby öffnen: privat oder öffentlich, mit p_cap Plätzen insgesamt (2 bis 9). Die 5 Fragen lost die
--- Seite aus; zurück kommen der Spiel-Code und der 4-stellige Raum-Code.
-create or replace function public.lobby_create(p_player text, p_qids text[], p_public boolean, p_cap integer)
+-- Lobby öffnen: privat oder öffentlich, mit p_cap Plätzen insgesamt (2 bis 9) und p_nq Fragen (3 bis 10).
+-- Die Fragen lost die Seite aus (bis zu 10, damit der Gastgeber später noch mehr wählen kann);
+-- zurück kommen der Spiel-Code und der 4-stellige Raum-Code.
+create or replace function public.lobby_create(p_player text, p_qids text[], p_public boolean, p_cap integer, p_nq integer default 5)
 returns json
 language plpgsql security definer set search_path = public
 as $$
@@ -1910,7 +1925,8 @@ begin
   if not exists (select 1 from public.accounts k where k.player_id = p_player) then
     raise exception 'need_account';
   end if;
-  if p_qids is null or coalesce(array_length(p_qids, 1), 0) <> 5 then
+  if p_qids is null or coalesce(array_length(p_qids, 1), 0) not between 3 and 10
+     or (select count(distinct q) from unnest(p_qids) q) <> array_length(p_qids, 1) then
     raise exception 'bad_questions';
   end if;
   foreach v_q in array p_qids loop
@@ -1920,6 +1936,9 @@ begin
   end loop;
   if p_cap is null or p_cap < 2 or p_cap > 9 then
     raise exception 'bad_cap';
+  end if;
+  if p_nq is null or p_nq < 3 or p_nq > array_length(p_qids, 1) then
+    raise exception 'bad_nq';
   end if;
   perform public.hh_lobby_sweep();
   -- Man kann nur in einer offenen Lobby zugleich sein.
@@ -1938,8 +1957,8 @@ begin
     v_room := (1000 + floor(random() * 9000)::int)::text;
     if not exists (select 1 from public.duels d where d.code = v_code) then
       begin
-        insert into public.lobbies (code, room, host, is_public, cap, qids)
-        values (v_code, v_room, p_player, coalesce(p_public, false), p_cap, p_qids);
+        insert into public.lobbies (code, room, host, is_public, cap, qids, nq)
+        values (v_code, v_room, p_player, coalesce(p_public, false), p_cap, p_qids, p_nq);
         insert into public.lobby_players (code, player, pos, seen) values (v_code, p_player, 0, now());
         return json_build_object('code', v_code, 'room', v_room);
       exception when unique_violation then
@@ -2048,6 +2067,50 @@ begin
   delete from public.lobby_players p where p.code = l.code and p.player = v_target;
   update public.lobbies x set kicked = array_append(x.kicked, v_target) where x.code = l.code;
   return true;
+end;
+$$;
+
+-- Der Gastgeber ändert die Lobby vor dem Start: Plätze (2 bis 9, nicht weniger als schon da sind),
+-- Fragen (3 bis 10) und ob sie öffentlich ist. Leere Werte bleiben, wie sie sind.
+create or replace function public.lobby_settings(p_code text, p_player text, p_cap integer, p_public boolean, p_nq integer)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  l   public.lobbies;
+  v_n integer;
+begin
+  l := public.hh_lobby_tick(p_code, p_player, true);
+  if l.code is null then
+    raise exception 'not_found';
+  end if;
+  if l.host is distinct from p_player then
+    raise exception 'not_host';
+  end if;
+  if l.q_at is not null then
+    raise exception 'already_started';
+  end if;
+  select count(*) into v_n from public.lobby_players p where p.code = l.code;
+  if p_cap is not null then
+    if p_cap < 2 or p_cap > 9 then
+      raise exception 'bad_cap';
+    end if;
+    if p_cap < v_n then
+      raise exception 'cap_too_small';
+    end if;
+    l.cap := p_cap;
+  end if;
+  if p_nq is not null then
+    if p_nq < 3 or p_nq > cardinality(l.qids) then
+      raise exception 'bad_nq';
+    end if;
+    l.nq := p_nq;
+  end if;
+  if p_public is not null then
+    l.is_public := p_public;
+  end if;
+  update public.lobbies x set cap = l.cap, nq = l.nq, is_public = l.is_public where x.code = l.code;
+  return public.hh_lobby_json(l, p_player);
 end;
 $$;
 
@@ -2174,7 +2237,8 @@ begin
       return public.lobby_join(p_player, n.room);
     end if;
   end if;
-  r := public.lobby_create(p_player, p_qids, false, greatest(l.cap, coalesce(l.n, 2))::integer);
+  r := public.lobby_create(p_player, p_qids, false, greatest(l.cap, coalesce(l.n, 2))::integer,
+                           least(l.nq::integer, coalesce(array_length(p_qids, 1), 0)));
   update public.lobbies x set next_code = r ->> 'code' where x.code = l.code;
   return r;
 end;
@@ -2384,7 +2448,8 @@ revoke all on function public.hh_lobby_tick(text, text, boolean) from public, an
 revoke all on function public.hh_lobby_json(public.lobbies, text) from public, anon, authenticated;
 revoke all on function public.hh_lobby_drop(text, text) from public, anon, authenticated;
 revoke all on function public.hh_lobby_sweep() from public, anon, authenticated;
-revoke all on function public.lobby_create(text, text[], boolean, integer) from public;
+revoke all on function public.lobby_create(text, text[], boolean, integer, integer) from public;
+revoke all on function public.lobby_settings(text, text, integer, boolean, integer) from public;
 revoke all on function public.lobby_join(text, text) from public;
 revoke all on function public.lobby_leave(text, text) from public;
 revoke all on function public.lobby_kick(text, text, text) from public;
@@ -2397,7 +2462,8 @@ revoke all on function public.lobby_stats(text, text) from public;
 revoke all on function public.join_duel(text, text, text) from public;
 revoke all on function public.save_duel(text, uuid, smallint[], text[], boolean) from public;
 revoke all on function public.get_duel(text, text) from public;
-grant execute on function public.lobby_create(text, text[], boolean, integer) to anon, authenticated;
+grant execute on function public.lobby_create(text, text[], boolean, integer, integer) to anon, authenticated;
+grant execute on function public.lobby_settings(text, text, integer, boolean, integer) to anon, authenticated;
 grant execute on function public.lobby_join(text, text) to anon, authenticated;
 grant execute on function public.lobby_leave(text, text) to anon, authenticated;
 grant execute on function public.lobby_kick(text, text, text) to anon, authenticated;
@@ -2410,6 +2476,251 @@ grant execute on function public.lobby_stats(text, text) to anon, authenticated;
 grant execute on function public.join_duel(text, text, text) to anon, authenticated;
 grant execute on function public.save_duel(text, uuid, smallint[], text[], boolean) to anon, authenticated;
 grant execute on function public.get_duel(text, text) to anon, authenticated;
+
+-- ============================================================
+-- Teil 9 · Mehrspieler-Spiele in der Statistik
+-- ============================================================
+-- Spiele mit drei oder mehr Leuten zählen im Profil mit: Spiele, Siege, Siegquote, gewonnene Fragen,
+-- Punkte, Nadeln, Serien und Historie. Sieg ist der alleinige erste Platz, ein geteilter erster Platz
+-- zählt als Remis. Die Rangliste zählt die Siege ebenfalls mit. "Häufigste Gegner" bleibt beim 1 gegen 1.
+
+-- Duell-Auswertung für beliebig viele Fragen (Lobbys zu zweit können 3 bis 10 Fragen haben).
+create or replace function public.hh_duel_outcome(d public.duels)
+returns table (wa integer, wb integer, sa integer, sb integer, winner text)
+language plpgsql immutable
+as $$
+declare
+  v_pts integer[] := array[10, 30, 55, 80, 100];
+  ta integer;
+  tb integer;
+  aa text;
+  ab text;
+begin
+  wa := 0; wb := 0; sa := 0; sb := 0;
+  for i in 1..greatest(coalesce(cardinality(d.qids), 0), 1) loop
+    ta := coalesce(d.a_tiers[i], -1);
+    tb := coalesce(d.b_tiers[i], -1);
+    aa := coalesce(d.a_answers[i], '');
+    ab := coalesce(d.b_answers[i], '');
+    if ta >= 0 and tb >= 0 and aa <> '' and lower(aa) = lower(ab) then
+      continue;
+    end if;
+    if ta >= 0 then sa := sa + v_pts[ta + 1]; end if;
+    if tb >= 0 then sb := sb + v_pts[tb + 1]; end if;
+    if ta > tb then wa := wa + 1; elsif tb > ta then wb := wb + 1; end if;
+  end loop;
+  winner := case when wa > wb then 'a' when wb > wa then 'b'
+                 when sa > sb then 'a' when sb > sa then 'b' else null end;
+  return next;
+end;
+$$;
+
+-- Profil lesen – jetzt mit den Mehrspieler-Spielen (in Zahlen und Historie; Historie mit Platz und Spielerzahl).
+create or replace function public.get_profile(p_pid text, p_player text)
+returns json
+language plpgsql security definer set search_path = public stable
+as $$
+declare
+  v_player text;
+  v_me     boolean;
+  v_today  date := (now() at time zone 'Europe/Berlin')::date;
+  v_json   json;
+begin
+  if coalesce(p_pid, '') = '' then
+    if p_player is null or char_length(p_player) not between 8 and 64 then
+      return null;
+    end if;
+    v_player := p_player;
+  else
+    if p_pid !~ '^[0-9a-f]{12}$' then
+      return null;
+    end if;
+    select x.p into v_player from (
+      select k.player_id as p from public.accounts k where k.pid = p_pid
+      union all
+      select d.a_player from public.duels d where public.hh_pid(d.a_player) = p_pid
+      union all
+      select d.b_player from public.duels d where d.b_player is not null and public.hh_pid(d.b_player) = p_pid
+      union all
+      select s.player_id from public.scores s where public.hh_pid(s.player_id) = p_pid
+    ) x limit 1;
+    if v_player is null then
+      return null;
+    end if;
+  end if;
+  v_me := p_player is not null and p_player = v_player;
+
+  with mine as (
+    select d.code, d.created_at,
+           d.a_player = v_player as is_a,
+           (d.a_status = 'done' and coalesce(d.b_status, '') = 'done') as final,
+           case when d.a_player = v_player then d.b_name else d.a_name end as opp_name,
+           case when d.a_player = v_player
+                then case when d.b_player is null then null else public.hh_pid(d.b_player) end
+                else public.hh_pid(d.a_player) end as opp_pid,
+           case when d.a_player = v_player then d.a_status else d.b_status end as my_status,
+           case when d.a_player = v_player then d.b_status else d.a_status end as opp_status,
+           case when d.a_player = v_player then d.a_tiers else d.b_tiers end as my_tiers,
+           o.wa, o.wb, o.sa, o.sb, o.winner
+      from public.duels d
+      cross join lateral public.hh_duel_outcome(d) o
+     where d.a_player = v_player or d.b_player = v_player
+  ), r as (
+    select m.code, m.created_at, m.final, m.opp_name, m.opp_pid, m.my_status, m.opp_status, m.my_tiers,
+           case when not m.final then 'open'
+                when m.winner is null then 'draw'
+                when (m.winner = 'a') = m.is_a then 'win'
+                else 'loss' end as result,
+           case when m.is_a then m.wa else m.wb end as my_rounds,
+           case when m.is_a then m.wb else m.wa end as opp_rounds,
+           case when m.is_a then m.sa else m.sb end as my_pts,
+           case when m.is_a then m.sb else m.sa end as opp_pts,
+           2 as players, null::integer as place
+      from mine m
+    union all
+    -- Mehrspieler-Spiele (ab 3 Spielern): Sieg, wer allein vorn liegt; geteilter erster Platz zählt als Remis.
+    select l.code, l.created_at, true, null::text, null::text, 'done'::text, 'done'::text, p.tiers,
+           case when p.won then 'win' when p.place = 1 then 'draw' else 'loss' end,
+           coalesce(p.rounds, 0),
+           coalesce((select sum(q.rounds) from public.lobby_players q where q.code = l.code and q.player <> v_player), 0)::integer,
+           coalesce(p.pts, 0),
+           (select max(q.pts) from public.lobby_players q where q.code = l.code and q.player <> v_player),
+           l.n::integer, p.place
+      from public.lobby_players p join public.lobbies l on l.code = p.code
+     where p.player = v_player and l.done and l.n >= 3
+  ), fin as (
+    select r.result, r.created_at,
+           row_number() over (order by r.created_at) - row_number() over (partition by r.result order by r.created_at) as grp,
+           sum(case when r.result <> 'win' then 1 else 0 end) over (order by r.created_at desc) as breaks
+      from r where r.final
+  )
+  select json_build_object(
+    'pid', public.hh_pid(v_player),
+    'me', v_me,
+    'account', exists (select 1 from public.accounts k where k.player_id = v_player),
+    'rename_next', case when v_me then (select (extract(epoch from k.name_changed_at + interval '7 days') * 1000)::bigint
+                       from public.accounts k
+                      where k.player_id = v_player and k.name_changed_at > now() - interval '7 days') end,
+    'tokens', case when v_me then greatest(public.hh_tokens(v_player)
+                 - coalesce((select k.spent from public.accounts k where k.player_id = v_player), 0), 0) end,
+    'name_style', (select k.name_style from public.accounts k where k.player_id = v_player),
+    'charm_l', (select k.charm_l from public.accounts k where k.player_id = v_player),
+    'charm_r', (select k.charm_r from public.accounts k where k.player_id = v_player),
+    'bonus', case when v_me then (
+        select json_build_object('day', x.day, 'pos', x.pos, 'tokens', public.hh_day_bonus(x.pos))
+          from (select s.day,
+                       (select count(*) + 1 from public.scores s2
+                         where s2.day = s.day and s2.name is not null and s2.score > s.score) as pos
+                  from public.scores s
+                 where s.player_id = v_player and s.name is not null and s.score > 0
+                   and s.day < v_today and s.day >= v_today - 7
+                 order by s.day desc limit 1) x) end,
+    'avatar', (select k.avatar from public.accounts k where k.player_id = v_player),
+    'xp', public.hh_xp(v_player),
+    'free', (select json_build_object('rounds', k.free_rounds, 'best', k.free_best, 'needles', k.free_needles)
+               from public.accounts k where k.player_id = v_player),
+    'name', coalesce((select k.name from public.accounts k where k.player_id = v_player), (select x.n from (
+        select d.a_name as n, d.created_at as t from public.duels d where d.a_player = v_player
+        union all
+        select d.b_name, d.created_at from public.duels d where d.b_player = v_player and d.b_name is not null
+        union all
+        select s.name, s.started_at from public.scores s where s.player_id = v_player and s.name is not null
+      ) x order by x.t desc limit 1)),
+    'since', (select (extract(epoch from min(x.t)) * 1000)::bigint from (
+        select d.created_at as t from public.duels d where d.a_player = v_player or d.b_player = v_player
+        union all
+        select s.started_at from public.scores s where s.player_id = v_player
+        union all
+        select k.created_at from public.accounts k where k.player_id = v_player
+      ) x),
+    'duels', (select json_build_object(
+        'played',      count(*) filter (where r.final),
+        'wins',        count(*) filter (where r.result = 'win'),
+        'losses',      count(*) filter (where r.result = 'loss'),
+        'draws',       count(*) filter (where r.result = 'draw'),
+        'open',        count(*) filter (where not r.final),
+        'rounds_won',  coalesce(sum(r.my_rounds) filter (where r.final), 0),
+        'rounds_lost', coalesce(sum(r.opp_rounds) filter (where r.final), 0),
+        'avg_pts',     round(avg(r.my_pts) filter (where r.final)),
+        'best_pts',    max(r.my_pts) filter (where r.final),
+        'needles',     (select count(*) from r r2, unnest(r2.my_tiers) t where t = 4),
+        'streak',      (select count(*) from fin f where f.breaks = 0),
+        'best_streak', (select coalesce(max(z.c), 0) from (select count(*) as c from fin f where f.result = 'win' group by f.grp) z)
+      ) from r),
+    'history', (select coalesce(json_agg(h order by h.t desc), '[]'::json) from (
+        select r.code, (extract(epoch from r.created_at) * 1000)::bigint as t, r.result,
+               r.opp_name, r.opp_pid, r.my_status, r.opp_status,
+               case when r.final then r.my_rounds end as my_rounds,
+               case when r.final then r.opp_rounds end as opp_rounds,
+               case when r.final then r.my_pts end as my_pts,
+               case when r.final then r.opp_pts end as opp_pts,
+               r.players, r.place
+          from r
+         where r.final or v_me
+         order by r.created_at desc
+         limit 30
+      ) h),
+    'rivals', (select coalesce(json_agg(x order by x.games desc, x.wins desc), '[]'::json) from (
+        select r.opp_pid as pid, max(r.opp_name) as name, count(*) as games,
+               count(*) filter (where r.result = 'win') as wins,
+               count(*) filter (where r.result = 'loss') as losses
+          from r
+         where r.final and r.opp_pid is not null
+         group by r.opp_pid
+         order by count(*) desc
+         limit 5
+      ) x),
+    'daily', (select json_build_object(
+        'played', count(*),
+        'avg',    round(avg(s.score)),
+        'best',   max(s.score),
+        'wins',   count(*) filter (where s.day < v_today and s.name is not null and s.score > 0 and s.score =
+                    (select max(s2.score) from public.scores s2 where s2.day = s.day and s2.name is not null)),
+        'needles', (select count(*) from public.scores s3, unnest(s3.tiers) t where s3.player_id = v_player and t = 4)
+      ) from public.scores s
+      where s.player_id = v_player and (s.status = 'done' or s.day < v_today))
+  ) into v_json;
+  return v_json;
+end;
+$$;
+
+-- Rangliste: Siege aus Duellen und Mehrspieler-Spielen.
+create or replace function public.get_ranking(p_player text)
+returns json
+language plpgsql security definer set search_path = public stable
+as $$
+declare
+  v_json json;
+begin
+  with x as (
+    select k.pid, k.name, public.hh_xp(k.player_id) as xp,
+           (p_player is not null and k.player_id = p_player) as me,
+           (select count(*)
+              from public.duels d cross join lateral public.hh_duel_outcome(d) o
+             where d.a_status = 'done' and coalesce(d.b_status, '') = 'done'
+               and ((d.a_player = k.player_id and o.winner = 'a') or (d.b_player = k.player_id and o.winner = 'b')))
+           + (select count(*)
+                from public.lobby_players p join public.lobbies l on l.code = p.code
+               where p.player = k.player_id and p.won and l.done and l.n >= 3) as wins
+      from public.accounts k
+  ), y as (
+    select x.*, rank() over (order by x.xp desc) as pos from x
+  )
+  select json_build_object(
+    'count', (select count(*) from y),
+    'top', (select coalesce(json_agg(t order by t.pos, t.name), '[]'::json)
+              from (select y.pid, y.name, y.xp, y.wins, y.me, y.pos from y order by y.pos, y.name limit 50) t),
+    'me', (select row_to_json(t) from (select y.pid, y.name, y.xp, y.wins, y.pos from y where y.me limit 1) t)
+  ) into v_json;
+  return v_json;
+end;
+$$;
+
+revoke all on function public.hh_duel_outcome(public.duels) from public, anon, authenticated;
+revoke all on function public.get_profile(text, text) from public;
+revoke all on function public.get_ranking(text) from public;
+grant execute on function public.get_profile(text, text) to anon, authenticated;
+grant execute on function public.get_ranking(text) to anon, authenticated;
 
 -- Supabase die neuen Funktionen sofort bekannt machen.
 notify pgrst, 'reload schema';
